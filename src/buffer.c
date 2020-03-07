@@ -178,11 +178,17 @@ static int sub(lua_State* const L) {
     lua_Integer const begin = luaL_checkinteger(L, 2);
     lua_Integer const end = luaL_checkinteger(L, 3);
 
-    if (begin < 0 || end >= self->size || begin == end) {
+    if (begin < 0 || end >= self->size || begin >= end) {
         return luaL_error(L, "invalid limits: %d and %d", begin, end);
     }
 
     return push(L, ((uint8_t const*)self->data) + begin, end - begin, 1);
+}
+
+static int size(lua_State* const L) {
+    buffer_t const* const self = check(L, 1);
+    lua_pushinteger(L, self->size);
+    return 1;
 }
 
 static int gc(lua_State* const L) {
@@ -216,6 +222,7 @@ static int push(lua_State* const L, void const* const data, size_t const size, i
         static const luaL_Reg methods[] = {
             {"peek", peek},
             {"sub",  sub},
+            {"size", size},
             {NULL,   NULL}
         };
 
