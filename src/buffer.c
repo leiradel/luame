@@ -178,7 +178,7 @@ static int sub(lua_State* const L) {
     lua_Integer const begin = luaL_checkinteger(L, 2);
     lua_Integer const end = luaL_checkinteger(L, 3);
 
-    if (begin < 0 || end >= self->size || begin >= end) {
+    if (begin < 0 || end >= self->size || begin > end) {
         return luaL_error(L, "invalid limits: %d and %d", begin, end);
     }
 
@@ -188,6 +188,12 @@ static int sub(lua_State* const L) {
 static int size(lua_State* const L) {
     buffer_t const* const self = check(L, 1);
     lua_pushinteger(L, self->size);
+    return 1;
+}
+
+static int tostring(lua_State* const L) {
+    buffer_t const* const self = (buffer_t*)lua_touserdata(L, 1);
+    lua_pushlstring(L, (char const*)self->data, self->size);
     return 1;
 }
 
@@ -204,11 +210,11 @@ static int gc(lua_State* const L) {
     return 0;
 }
 
-static int push(lua_State* const L, void const* const data, size_t const size, int const parentIndex) {
+static int push(lua_State* const L, void const* const data, size_t const length, int const parentIndex) {
     buffer_t* const self = (buffer_t*)lua_newuserdata(L, sizeof(*self));
 
     self->data = data;
-    self->size = size;
+    self->size = length;
 
     if (parentIndex != LUA_NOREF) {
         lua_pushvalue(L, parentIndex);
@@ -228,6 +234,9 @@ static int push(lua_State* const L, void const* const data, size_t const size, i
 
         luaL_newlib(L, methods);
         lua_setfield(L, -2, "__index");
+
+        lua_pushcfunction(L, tostring);
+        lua_setfield(L, -2, "__tostring");
 
         lua_pushcfunction(L, gc);
         lua_setfield(L, -2, "__gc");
