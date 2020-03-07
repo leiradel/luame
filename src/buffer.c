@@ -244,7 +244,7 @@ static int new_(lua_State* const L) {
     return push(L, data, length, LUA_NOREF);
 }
 
-int luaopen_Buffer(lua_State* const L) {
+int luaopen_buffer(lua_State* const L) {
     static const luaL_Reg functions[] = {
         {"new", new_},
         {NULL,  NULL}
