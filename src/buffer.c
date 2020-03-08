@@ -3,14 +3,16 @@
 
 #include <stdint.h>
 #include <stddef.h>
-
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+#include "djb2.h"
 
 typedef struct {
     void const* data;
-    size_t offset;
     size_t size;
+    size_t position;
     int parentRef;
 }
 buffer_t;
@@ -40,41 +42,69 @@ static buffer_t* check(lua_State* const L, int const index) {
     return (buffer_t*)luaL_checkudata(L, index, BUFFER_MT);
 }
 
-static int peek(lua_State* const L) {
-    buffer_t const* const self = check(L, 1);
-    lua_Integer const offset = luaL_checkinteger(L, 2);
-    char const* const type = luaL_checkstring(L, 3);
+static int read(lua_State* const L) {
+    buffer_t* const self = check(L, 1);
 
-    if (type[0] != 0 && type[1] != 0) {
-        goto error;
+    size_t position = self->position;
+    size_t const size = self->size;
+    uint8_t const* const data = ((uint8_t const*)self->data) + position;
+
+    if (lua_type(L, 2) == LUA_TNUMBER) {
+        lua_Integer const length = lua_tointeger(L, 2);
+
+        if (position + length > size) {
+invalid_position:
+                return luaL_error(L, "invalid position: %d", (lua_Integer)position);
+        }
+
+        lua_pushlstring(L, (char const*)data, length);
+        return 1;
     }
 
-    uint8_t const* const data = ((uint8_t const*)self->data) + offset;
+    char const* const mode = luaL_checkstring(L, 2);
     conv_t conv;
 
-    switch (*type) {
-        case 'B':
-            if (offset < 0 || offset + sizeof(conv.b) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
+    switch (*mode) {
+        case 'B': /* byte */
+        case 'Z': /* boolean */
+        case '1': /* u1 */
+            if (position + 1 > size) {
+                goto invalid_position;
             }
 
             conv.m[0] = data[0];
-            lua_pushinteger(L, conv.b);
-            return 1;
+            position++;
+            break;
 
-        case 'C':
-            if (offset < 0 || offset + sizeof(conv.c) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
+        case 'C': /* char */
+        case '2': /* u2 */
+            if (position + 2 > size) {
+                goto invalid_position;
             }
 
             conv.m[0] = data[1];
             conv.m[1] = data[0];
-            lua_pushinteger(L, conv.c);
-            return 1;
+            position += 2;
+            break;
 
-        case 'D':
-            if (offset < 0 || offset + sizeof(conv.d) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
+        case 'I': /* int */
+        case 'F': /* float */
+        case '4': /* u4 */
+            if (position + 4 > size) {
+                goto invalid_position;
+            }
+
+            conv.m[0] = data[3];
+            conv.m[1] = data[2];
+            conv.m[2] = data[1];
+            conv.m[3] = data[0];
+            position += 4;
+            break;
+
+        case 'J': /* long */
+        case 'D': /* double */
+            if (position + 8 > size) {
+                goto invalid_position;
             }
 
             conv.m[0] = data[7];
@@ -85,92 +115,62 @@ static int peek(lua_State* const L) {
             conv.m[5] = data[2];
             conv.m[6] = data[1];
             conv.m[7] = data[0];
-            lua_pushnumber(L, conv.d);
-            return 1;
+            position += 8;
+            break;
 
-        case 'F':
-            if (offset < 0 || offset + sizeof(conv.f) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[3];
-            conv.m[1] = data[2];
-            conv.m[2] = data[1];
-            conv.m[3] = data[0];
-            lua_pushnumber(L, conv.f);
-            return 1;
-
-        case 'I':
-            if (offset < 0 || offset + sizeof(conv.i) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[3];
-            conv.m[1] = data[2];
-            conv.m[2] = data[1];
-            conv.m[3] = data[0];
-            lua_pushinteger(L, conv.i);
-            return 1;
-
-        case 'J':
-            if (offset < 0 || offset + sizeof(conv.j) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[7];
-            conv.m[1] = data[6];
-            conv.m[2] = data[5];
-            conv.m[3] = data[4];
-            conv.m[4] = data[3];
-            conv.m[5] = data[2];
-            conv.m[6] = data[1];
-            conv.m[7] = data[0];
-            lua_pushinteger(L, conv.j);
-            return 1;
-
-        case 'Z':
-            if (offset < 0 || offset + sizeof(conv.z) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[0];
-            lua_pushboolean(L, conv.z != 0);
-            return 1;
-
-        case '1':
-            if (offset < 0 || offset + sizeof(conv.u1) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[0];
-            lua_pushinteger(L, conv.u1);
-            return 1;
-
-        case '2':
-            if (offset < 0 || offset + sizeof(conv.u2) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[1];
-            conv.m[1] = data[0];
-            lua_pushinteger(L, conv.u2);
-            return 1;
-
-        case '4':
-            if (offset < 0 || offset + sizeof(conv.u4) > self->size) {
-                return luaL_error(L, "out of bounds: %d", offset);
-            }
-
-            conv.m[0] = data[3];
-            conv.m[1] = data[2];
-            conv.m[2] = data[1];
-            conv.m[3] = data[0];
-            lua_pushinteger(L, conv.u1);
-            return 1;
+        default:
+            return luaL_error(L, "invalid mode: %c", isprint(*mode) ? *mode : '?');
     }
 
-error:
-    return luaL_error(L, "invalid base type specifier: \"%s\"", type);
+    self->position = position;
+
+    switch (*mode) {
+        case 'B': lua_pushinteger(L, conv.b);  return 1;
+        case 'Z': lua_pushboolean(L, conv.z);  return 1;
+        case '1': lua_pushinteger(L, conv.u1); return 1;
+        case 'C': lua_pushinteger(L, conv.c);  return 1;
+        case '2': lua_pushinteger(L, conv.u2); return 1;
+        case 'I': lua_pushinteger(L, conv.i);  return 1;
+        case 'F': lua_pushnumber(L, conv.f);   return 1;
+        case '4': lua_pushinteger(L, conv.u4); return 1;
+        case 'J': lua_pushinteger(L, conv.j);  return 1;
+        case 'D': lua_pushnumber(L, conv.d);   return 1;
+    }
+}
+
+static int seek(lua_State* const L) {
+    buffer_t* const self = check(L, 1);
+    lua_Integer const offset = luaL_checkinteger(L, 2);
+    char const* const whence = luaL_optstring(L, 3, "set");
+
+    uint32_t const hash = djb2(whence);
+    lua_Integer position = 0;
+
+    switch (hash) {
+        case UINT32_C(0x0b88a991): /* set */ position = offset; break;
+        case UINT32_C(0x0b88678f): /* cur */ position = self->position + offset; break;
+        case UINT32_C(0x0b886f1c): /* end */ position = self->size - offset; break;
+        default: return luaL_error(L, "invalid seek mode: %s", whence);
+    }
+
+    if (position < 0 || position > self->size) {
+        return luaL_error(L, "invalid seek position: %d", position);
+    }
+
+    self->position = (size_t)position;
+    return 0;
+}
+
+static int tell(lua_State* const L) {
+    buffer_t const* const self = check(L, 1);
+    lua_pushinteger(L, self->position);
+    return 1;
+}
+
+static int size(lua_State* const L) {
+    buffer_t const* const self = check(L, 1);
+    lua_pushinteger(L, self->size);
+    return 1;
 }
 
 static int sub(lua_State* const L) {
@@ -183,12 +183,6 @@ static int sub(lua_State* const L) {
     }
 
     return push(L, ((uint8_t const*)self->data) + begin, end - begin, 1);
-}
-
-static int size(lua_State* const L) {
-    buffer_t const* const self = check(L, 1);
-    lua_pushinteger(L, self->size);
-    return 1;
 }
 
 static int tostring(lua_State* const L) {
@@ -226,9 +220,11 @@ static int push(lua_State* const L, void const* const data, size_t const length,
 
     if (luaL_newmetatable(L, BUFFER_MT)) {
         static const luaL_Reg methods[] = {
-            {"peek", peek},
-            {"sub",  sub},
+            {"read", read},
+            {"seek", seek},
+            {"tell", tell},
             {"size", size},
+            {"sub",  sub},
             {NULL,   NULL}
         };
 
