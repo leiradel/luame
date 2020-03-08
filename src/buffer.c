@@ -36,7 +36,7 @@ conv_t;
 
 #define BUFFER_MT "buffer_t"
 
-static int push(lua_State* const L, void const* const data, size_t const size, int const parentIndex);
+int buffer_push(lua_State* L, void const* data, size_t size, int parentIndex);
 
 static buffer_t* check(lua_State* const L, int const index) {
     return (buffer_t*)luaL_checkudata(L, index, BUFFER_MT);
@@ -182,7 +182,7 @@ static int sub(lua_State* const L) {
         return luaL_error(L, "invalid limits: %d and %d", begin, end);
     }
 
-    return push(L, ((uint8_t const*)self->data) + begin, end - begin, 1);
+    return buffer_push(L, ((uint8_t const*)self->data) + begin, end - begin, 1);
 }
 
 static int tostring(lua_State* const L) {
@@ -204,7 +204,7 @@ static int gc(lua_State* const L) {
     return 0;
 }
 
-static int push(lua_State* const L, void const* const data, size_t const length, int const parentIndex) {
+int buffer_push(lua_State* const L, void const* const data, size_t const length, int const parentIndex) {
     buffer_t* const self = (buffer_t*)lua_newuserdata(L, sizeof(*self));
 
     self->data = data;
@@ -253,7 +253,7 @@ static int new_(lua_State* const L) {
     }
 
     memcpy(data, string, length);
-    return push(L, data, length, LUA_NOREF);
+    return buffer_push(L, data, length, LUA_NOREF);
 }
 
 int luaopen_buffer(lua_State* const L) {
