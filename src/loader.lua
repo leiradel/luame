@@ -1,102 +1,106 @@
 local buffer = require 'buffer'
 
 local function readConstantClass(b)
-    local constant = {
-        nameIndex = b:peek(0, '2')
+    return {
+        tag = 'class',
+        nameIndex = b:read('2')
     }
-
-    return constant, b:sub(2, b:size() - 1)
 end
 
 local function readConstantFieldref(b)
-    local constant = {
-        classIndex = b:peek(0, '2'),
-        nameAndTypeIndex = b:peek(2, '2')
+    return {
+        tag = 'fieldref',
+        classIndex = b:read('2'),
+        nameAndTypeIndex = b:read('2')
     }
+end
 
-    return constant, b:sub(4, b:size() - 1)
+local function readConstantMethodref(b)
+    return {
+        tag = 'methodref',
+        classIndex = b:read('2'),
+        nameAndTypeIndex = b:read('2')
+    }
+end
+
+local function readConstantInterfaceMethodref(b)
+    return {
+        tag = 'interfaceMethodref',
+        classIndex = b:read('2'),
+        nameAndTypeIndex = b:read('2')
+    }
 end
 
 local function readConstantString(b)
-    local constant = {
-        stringIndex = b:peek(0, '2')
+    return {
+        tag = 'string',
+        stringIndex = b:read('2')
     }
-
-    return constant, b:sub(2, b:size() - 1)
 end
 
 local function readConstantInteger(b)
-    local constant = {
-        bytes = b:peek(0, '4'),
-        value = b:peek(0, 'I')
+    return {
+        tag = 'integer',
+        -- bytes is the actual integer, not the bytes.
+        bytes = b:read('I')
     }
-
-    return constant, b:sub(4, b:size() - 1)
 end
 
 local function readConstantFloat(b)
-    local constant = {
-        bytes = b:peek(0, '4'),
-        value = b:peek(0, 'F')
+    return {
+        tag = 'float',
+        -- bytes is the actual float, not the bytes.
+        bytes = b:read('F')
     }
-
-    return constant, b:sub(4, b:size() - 1)
 end
 
 local function readConstantLong(b)
-    local constant = {
-        bytes = b:peek(0, '8'),
-        value = b:peek(0, 'J')
+    return {
+        tag = 'long',
+        -- bytes is the actual long, not the bytes.
+        bytes = b:read('J')
     }
-
-    return constant, b:sub(8, b:size() - 1)
 end
 
 local function readConstantDouble(b)
-    local constant = {
-        bytes = b:peek(0, '8'),
-        value = b:peek(0, 'D')
+    return {
+        tag = 'double',
+        -- bytes is the actual double, not the bytes.
+        bytes = b:read('D')
     }
-
-    return constant, b:sub(8, b:size() - 1)
 end
 
 local function readConstantNameAndType(b)
-    local constant = {
-        nameIndex = b:peek(0, '2'),
-        descriptorIndex = b:peek(2, '2')
+    return {
+        tag = 'nameAndType',
+        nameIndex = b:read('2'),
+        descriptorIndex = b:read('2')
     }
-
-    return constant, b:sub(4, b:size() - 1)
 end
 
 local function readConstantUtf8(b)
-    local length = b:peek(0, '2')
-    local bytes = b:sub(2, 2 + length - 1)
+    local length = b:read('2')
+    local bytes = b:read(length)
 
-    local constant = {
+    return {
+        tag = 'utf8',
         length = length,
-        bytes = bytes,
-
-        -- The field below doesn't exist in the CONSTANT_Utf8_info structure.
-        string = tostring(bytes)
+        -- bytes is the actual string, not the bytes.
+        bytes = bytes
     }
-
-    return constant, b:sub(2 + length, b:size() - 1)
 end
 
-local function readConstantPoolEntry(b)
-    local tag = b:peek(0, '1')
-    b = b:sub(1, b:size() - 1)
+local function readConstant(b)
+    local tag = b:read('1')
 
     if tag == 7 then
         return class:readConstantClass(b)
     elseif tag == 9 then
         return class:readConstantFieldref(b)
     elseif tag == 10 then
-        return class:readConstantFieldref(b) -- readConstantMethodref
+        return class:readConstantMethodref(b)
     elseif tag == 11 then
-        return class:readConstantFieldref(b) -- readConstantInterfaceMethodRef
+        return class:readConstantInterfaceMethodref(b)
     elseif tag == 8 then
         return class:readConstantString(b)
     elseif tag == 3 then
@@ -112,7 +116,7 @@ local function readConstantPoolEntry(b)
     elseif tag == 1 then
         return class:readConstantUtf8(b)
     else
-        error('Invalid tag in constant pool: %u', tag)
+        error(string.format('Invalid constant in constnt pool: %u', tag))
     end
 end
 
@@ -120,88 +124,282 @@ local function readConstantPool(cpoolCount, b)
     local cpool = {}
 
     for i = 1, cpoolCount do
-        cpool[i], b = readConstantPoolEntry(b)
+        cpool[i] = readConstant(b)
     end
 
-    return cpool, b
+    return cpool
 end
 
 local function readInterfaces(interfacesCount, b)
     local interfaces = {}
 
     for i = 1, interfacesCount do
-        interfaces[i] = b:peek((i - 1) * 2, '2')
+        interfaces[i] = b:read('2')
     end
 
-    return interfaces, b:sub(interfacesCount * 2, b:size() - 1)
+    return interfaces
 end
 
-local function readAttributeEntry(b)
+local readAttributes
+
+local function readConstantValue(b)
+    return {
+        tag = 'constantValue',
+        index = b:read('2')
+    }
 end
 
-local function readAttributes(attributesCount, b)
-    local attributes = {}
+local function readExceptionTable(tableLength, b)
+    local table = {}
 
-    for i = 1, attributesCount do
-        attributes[i], b = readAttributeEntry(b)
+    for i = 1, tableLength do
+        table[i] = {
+            startPc = read('2'),
+            endPc = read('2'),
+            handlerPc = read('2'),
+            catchType = read('2')
+        }
     end
 
-    return attributes, b
+    return table
 end
 
-local function readFieldEntry(b)
-    local attributesCount = b:peek(6, '2')
-    local attributes, b = readAttributes(attributesCount, b:sub(8, b:size() - 1))
+local function readCode(b, cpool)
+    local maxStack = b:read('2')
+    local maxLocals = b:read('2')
+    local codeLength = b:read('4')
+    local code = b:read(codeLength)
+    local exceptionTableLength = b:read('2')
+    local exceptionTable = readExceptionTable(exceptionTableLength, b)
+    local attributesCount = b:read('2')
+    local attributes = readAttributes(attributesCount, b, cpool)
 
-    local field = {
-        accessFlags = b:peek(0, '2'),
-        nameIndex = b:peek(2, '2'),
-        descriptorIndex = b:peek(4, '2'),
+    return {
+        tag = 'code',
+        maxStack = maxStack,
+        maxLocals = maxLocals,
+        codeLength = codeLength,
+        code = code,
+        exceptionTableLength = exceptionTableLength,
+        exceptionTable = exceptionTable,
         attributesCount = attributesCount,
         attributes = attributes
     }
+end
 
-    return field, b
+local function readExceptions(b)
+    local number = b:read('2')
+    local indexTable = {}
+
+    for i = 1, number do
+        indexTable[i] = b:read('2')
+    end
+
+    return {
+        tag = 'exceptions',
+        number = number,
+        indexTable = indexTable
+    }
+end
+
+local function readSynthetic(b)
+    return {
+        tag = 'synthetic'
+    }
+end
+
+local function readSourceFile(b)
+    return {
+        tag = 'sourceFile',
+        index = b:read('2')
+    }
+end
+
+local function readLineNumberTable(b)
+    local tableLength = b:read('2')
+    local table = {}
+
+    for i = 1, tableLength do
+        table[i] = {
+            startPc = b:read('2'),
+            lineNumber = b:read('2')
+        }
+    end
+
+    return {
+        tag = 'lineNumberTable',
+        tableLength = tableLength,
+        table = table
+    }
+end
+
+local function readLocalVariableTable(b)
+    local tableLength = b:read('2')
+    local table = {}
+
+    for i = 1, tableLength do
+        table[i] = {
+            startPc = b:read('2'),
+            length = b:read('2'),
+            nameIndex = b:read('2'),
+            descriptorIndex = b:read('2'),
+            index = b:read('2')
+        }
+    end
+
+    return {
+        tag = 'localVariableTable',
+        tableLength = tableLength,
+        table = table
+    }
+end
+
+local function readDeprecated(b)
+    return {
+        tag = 'deprecated'
+    }
+end
+
+local function readAttribute(b, cpool)
+    local nameIndex = b:read('2')
+    local name = cpool[nameIndex]
+
+    if not name or name.tag ~= 'utf8' then
+        error(string.format('Invalid attribute nameIndex: %u', nameIndex))
+    end
+
+    local length = b:read('4')
+    local tag = name.bytes
+
+    if tag == 'ConstantValue' then
+        return readConstantValue(b)
+    elseif tag == 'Code' then
+        return readCode(b, cpool)
+    elseif tag == 'Exceptions' then
+        return readExceptions(b)
+    elseif tag == 'Synthetic' then
+        return readSynthetic(b)
+    elseif tag == 'SourceFile' then
+        return readSourceFile(b)
+    elseif tag == 'LineNumberTable' then
+        return readLineNumberTable(b)
+    elseif tag == 'LocalVariableTable' then
+        return readLocalVariableTable(b)
+    elseif tag == 'Deprecated' then
+        return readDeprecated(b)
+    else
+        b:seek(length, 'cur')
+    end
+end
+
+-- Local since forward-declared above.
+function readAttributes(attributesCount, b, cpool)
+    local attributes = {}
+
+    for i = 1, attributesCount do
+        attributes[i] = readAttribute(b, cpool)
+    end
+
+    return attributes
 end
 
 local function readFields(fieldsCount, b)
     local fields = {}
 
     for i = 1, fieldsCount do
-        fields[i], b = readFieldEntry(b)
+        local accessFlags = b:read('2')
+        local nameIndex = b:read('2')
+        local descriptorIndex = b:read('2')
+        local attributesCount = b:read('2')
+        local attributes = readAtributes(attributesCount)
+
+        fields[i] = {
+            accessFlags = accessFlags,
+            nameIndex = nameIndex,
+            descriptorIndex = descriptorIndex,
+            attributesCount = attributesCount,
+            attributes = attributes
+        }
     end
 
     return fields
 end
 
-local function defineClass(string)
-    local b = buffer.new(string)
-    local magic = b:peek(0, '4')
+local function readMethods(methodsCount, b)
+    local methods = {}
 
-    if magic ~= 0xcafebabe then
-        error('Invalid magic number: 0x%08x', magic)
+    for i = 1, methodsCount do
+        local accessFlags = b:read('2')
+        local nameIndex = b:read('2')
+        local descriptorIndex = b:read('2')
+        local attributesCount = b:read('2')
+        local attributes = readAtributes(attributesCount)
+
+        methods[i] = {
+            accessFlags = accessFlags,
+            nameIndex = nameIndex,
+            descriptorIndex = descriptorIndex,
+            attributesCount = attributesCount,
+            attributes = attributes
+        }
     end
 
-    local minor = b:peek(4, '2')
-    local major = b:peek(6, '2')
+    return methods
+end
+
+local function defineClass(string)
+    local b = buffer.new(string)
+    local magic = b:read('4')
+
+    if magic ~= 0xcafebabe then
+        error(string.format('Invalid magic number: 0x%08x', magic))
+    end
+
+    local minor = b:read('2')
+    local major = b:read('2')
 
     if major > 47 then
         -- Versions greater than JDK 1.3 are an error.
-        error('Unsupported class version %u.%u', major, minor)
+        error(string.format('Unsupported class version %u.%u', major, minor))
     end
 
-    local cpoolCount = b:peek(8, '2') - 1
-    local cpool, b = readConstantPool(cpoolCount, b:sub(10, b:size() - 1))
+    local cpoolCount = b:read('2') - 1
+    local cpool = readConstantPool(cpoolCount, b)
 
-    local accessFlags = b:peek(0, '2')
-    local thisClass = b:peek(2, '2')
-    local superClass = b:peek(4, '2')
+    local accessFlags = b:read('2')
+    local thisClass = b:read('2')
+    local superClass = b:read('2')
     
-    local interfacesCount = b:peek(6, '2')
-    local interfaces, b = readInterfaces(interfacesCount, b:sub(8, b:size() - 1))
+    local interfacesCount = b:read('2')
+    local interfaces = readInterfaces(interfacesCount, b)
 
-    local fieldsCount = b:peek(0, '2')
-    local fields, b = readFields(fieldsCount, b:sub(2, b:size() - 1))
+    local fieldsCount = b:read('2')
+    local fields = readFields(fieldsCount, b)
+
+    local methodsCount = b:read('2')
+    local methods = readMethods(methodsCount, b)
+
+    local attributesCount = b:read('2')
+    local attributes = readAttributes(attributesCount, b, cpool)
+
+    return {
+        magic = magic,
+        major = major,
+        minor = minor,
+        constantPoolCount = cpoolCount,
+        constantPool = cpool,
+        accessFlags = accessFlags,
+        thisClass = thisClass,
+        superClass = superClass,
+        interfacesCount = interfacesCount,
+        interfaces = interfaces,
+        fieldsCount = fieldsCount,
+        fields = fields,
+        methodsCount = methodsCount,
+        methods = methods,
+        attributesCount = attributesCount,
+        attributes = attributes
+    }
 end
 
 return defineClass
