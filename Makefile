@@ -24,7 +24,7 @@ ZLIB_OBJ_FILES = \
 	src/zlib/zutil.o
 
 OBJ_FILES = src/buffer.o src/djb2.o src/zip.o src/modules.o src/main.o $(ZLIB_OBJ_FILES)
-LUA_FILES = src/loader.lua.h
+LUA_FILES = src/manifest.lua.h src/loader.lua.h
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -O0 -g -DLUAME_DEBUG
