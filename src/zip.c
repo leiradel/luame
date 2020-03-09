@@ -1,46 +1,70 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include <zip.h>
+#include <unzip.h>
 
-#define ZIP_MT "zip_t"
+#include <stdlib.h>
 
-static zip_t* check(lua_State* const L, int const index) {
-    return *(zip_t**)luaL_checkudata(L, index, ZIP_MT);
+#define UNZIP_MT "unzFile"
+
+int buffer_push(lua_State* L, void const* data, size_t size, int parentIndex);
+
+static unzFile* check(lua_State* const L, int const index) {
+    return (unzFile*)luaL_checkudata(L, index, UNZIP_MT);
 }
 
-static int read(lua_State* const L) {
-    zip_t* const self = check(L, 1);
+static int readzip(lua_State* const L) {
+    unzFile* const self = check(L, 1);
+    char const* const path = luaL_checkstring(L, 2);
 
+    if (unzLocateFile(*self, path, 1) != UNZ_OK) {
+	    return luaL_error(L, "could not find file \"%s\" in archive", path);
+    }
+
+    unz_file_info info;
+
+    if (unzGetCurrentFileInfo(*self, &info, NULL, 0, NULL, 0, NULL, 0) != UNZ_OK) {
+	    return luaL_error(L, "error getting information for file \"%s\" in archive", path);
+    }
+
+    if (unzOpenCurrentFile(*self) != UNZ_OK) {
+    	return luaL_error(L, "error opening file \"%s\"", path);
+    }
+
+    void* const buffer = malloc(info.uncompressed_size);
+
+    if (buffer == NULL) {
+        unzCloseCurrentFile(*self);
+        return luaL_error(L, "out-of-memory allocating buffer to read from file \"%s\" in archive", path);
+    }
+
+    if (unzReadCurrentFile(*self, buffer, info.uncompressed_size) != info.uncompressed_size) {
+        unzCloseCurrentFile(*self);
+        return luaL_error(L, "error reading from file \"%s\" in archive", path);
+    }
+
+    unzCloseCurrentFile(*self);
+    return buffer_push(L, buffer, (size_t)info.uncompressed_size, LUA_NOREF);
 }
 
 static int gc(lua_State* const L) {
-    zip_t* const self = *(zip_t**)lua_touserdata(L, 1);
-    zip_close(self);
+    unzFile* const self = (unzFile*)lua_touserdata(L, 1);
+    unzClose(*self);
     return 0;
 }
 
 static int open(lua_State* const L) {
     char const* const path = luaL_checkstring(L, 1);
-    int err;
+    unzFile* const self = (unzFile*)lua_newuserdata(L, sizeof(unzFile));
+    *self = unzOpen(path);
 
-    zip_t* const self = zip_open(path, ZIP_CHECKCONS | ZIP_RDONLY, &err);
-
-    if (self == NULL) {
-        zip_error_t error;
-        zip_error_init_with_code((&error, err);
-
-        lua_pushfstring(L, "error opening archive \"%s\": %s", path, zip_error_strerror(&error));
-
-        zip_error_fini(&error);
-        return lua_error(L);
+    if (*self == NULL) {
+        return luaL_error(L, "error opening archive \"%s\"", path);
     }
 
-    *(zip_t**)lua_newuserdata(L, sizeof(zip_t*)) = self;
-
-    if (luaL_newmetatable(L, ZIP_MT)) {
+    if (luaL_newmetatable(L, UNZIP_MT)) {
         static const luaL_Reg methods[] = {
-            {"read", read},
+            {"read", readzip},
             {NULL,   NULL}
         };
 
@@ -55,7 +79,7 @@ static int open(lua_State* const L) {
     return 1;
 }
 
-int luazip_buffer(lua_State* const L) {
+int luaopen_zip(lua_State* const L) {
     static const luaL_Reg functions[] = {
         {"open", open},
         {NULL,   NULL}
