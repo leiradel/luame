@@ -57,6 +57,7 @@ invalid_position:
                 return luaL_error(L, "invalid position: %d", (lua_Integer)position);
         }
 
+        self->position += length;
         lua_pushlstring(L, (char const*)data, length);
         return 1;
     }
