@@ -4,6 +4,7 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+#include "manifest.lua.h"
 #include "loader.lua.h"
 
 int luaopen_buffer(lua_State*);
@@ -35,9 +36,10 @@ module_t;
 // All modules that our searcher will know.
 static const module_t modules[] =
 {
-    MODL("loader", loader_lua),
-    MODC("buffer", luaopen_buffer),
-    MODC("zip",    luaopen_zip)
+    MODL("manifest", manifest_lua),
+    MODL("loader",   loader_lua),
+    MODC("buffer",   luaopen_buffer),
+    MODC("zip",      luaopen_zip)
 };
 
 #undef MODL
