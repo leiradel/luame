@@ -65,9 +65,9 @@ invalid_position:
     conv_t conv;
 
     switch (*mode) {
-        case 'B': /* byte */
-        case 'Z': /* boolean */
-        case '1': /* u1 */
+        case 'B': // byte
+        case 'Z': // boolean
+        case '1': // u1
             if (position + 1 > size) {
                 goto invalid_position;
             }
@@ -76,8 +76,8 @@ invalid_position:
             position++;
             break;
 
-        case 'C': /* char */
-        case '2': /* u2 */
+        case 'C': // char
+        case '2': // u2
             if (position + 2 > size) {
                 goto invalid_position;
             }
@@ -87,9 +87,9 @@ invalid_position:
             position += 2;
             break;
 
-        case 'I': /* int */
-        case 'F': /* float */
-        case '4': /* u4 */
+        case 'I': // int
+        case 'F': // float
+        case '4': // u4
             if (position + 4 > size) {
                 goto invalid_position;
             }
@@ -101,8 +101,8 @@ invalid_position:
             position += 4;
             break;
 
-        case 'J': /* long */
-        case 'D': /* double */
+        case 'J': // long
+        case 'D': // double
             if (position + 8 > size) {
                 goto invalid_position;
             }
@@ -117,6 +117,45 @@ invalid_position:
             conv.m[7] = data[0];
             position += 8;
             break;
+
+        case 'l': {
+            // line
+            if (position == size) {
+                lua_pushnil(L);
+                return 1;
+            }
+
+            luaL_Buffer buffer;
+            luaL_buffinit(L, &buffer);
+
+            uint8_t const* const data = (uint8_t const*)self->data;
+
+            while (position < size) {
+                uint8_t k = data[position++];
+
+                if (k == '\r') {
+                    if (position == size || data[position++] != '\n') {
+                        // Stray \r in buffer.
+                        return luaL_error(L, "invalid end-of-line: \\r");
+                    }
+
+                    // Push line terminated by \r\n.
+                    break;
+                }
+                else if (k == '\n') {
+                    // Push line terminated by \n.
+                    break;
+                }
+                else {
+                    luaL_addchar(&buffer, k);
+                }
+            }
+
+            // Push last line without an end-of-line.
+            self->position = position;
+            luaL_pushresult(&buffer);
+            return 1;
+        }
     }
 
     self->position = position;
@@ -208,6 +247,7 @@ int buffer_push(lua_State* const L, void const* const data, size_t const length,
 
     self->data = data;
     self->size = length;
+    self->position = 0;
 
     if (parentIndex != LUA_NOREF) {
         lua_pushvalue(L, parentIndex);
