@@ -117,9 +117,6 @@ invalid_position:
             conv.m[7] = data[0];
             position += 8;
             break;
-
-        default:
-            return luaL_error(L, "invalid mode: %c", isprint(*mode) ? *mode : '?');
     }
 
     self->position = position;
@@ -136,6 +133,8 @@ invalid_position:
         case 'J': lua_pushinteger(L, conv.j);  return 1;
         case 'D': lua_pushnumber(L, conv.d);   return 1;
     }
+
+    return luaL_error(L, "invalid mode: %c", isprint(*mode) ? *mode : '?');
 }
 
 static int seek(lua_State* const L) {
