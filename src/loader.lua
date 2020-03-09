@@ -80,7 +80,7 @@ end
 
 local function readConstantUtf8(b)
     local length = b:read '2'
-    local bytes = b:read length
+    local bytes = b:read(length)
 
     return {
         tag = 'utf8',
@@ -94,29 +94,29 @@ local function readConstant(b)
     local tag = b:read '1'
 
     if tag == 7 then
-        return class:readConstantClass(b)
+        return readConstantClass(b)
     elseif tag == 9 then
-        return class:readConstantFieldref(b)
+        return readConstantFieldref(b)
     elseif tag == 10 then
-        return class:readConstantMethodref(b)
+        return readConstantMethodref(b)
     elseif tag == 11 then
-        return class:readConstantInterfaceMethodref(b)
+        return readConstantInterfaceMethodref(b)
     elseif tag == 8 then
-        return class:readConstantString(b)
+        return readConstantString(b)
     elseif tag == 3 then
-        return class:readConstantInteger(b)
+        return readConstantInteger(b)
     elseif tag == 4 then
-        return class:readConstantFloat(b)
+        return readConstantFloat(b)
     elseif tag == 5 then
-        return class:readConstantLong(b)
+        return readConstantLong(b)
     elseif tag == 6 then
-        return class:readConstantDouble(b)
+        return readConstantDouble(b)
     elseif tag == 12 then
-        return class:readConstantNameAndType(b)
+        return readConstantNameAndType(b)
     elseif tag == 1 then
-        return class:readConstantUtf8(b)
+        return readConstantUtf8(b)
     else
-        error(string.format('Invalid constant in constnt pool: %u', tag))
+        error(string.format('invalid tag in constant pool: %u', tag))
     end
 end
 
@@ -124,7 +124,13 @@ local function readConstantPool(cpoolCount, b)
     local cpool = {}
 
     for i = 1, cpoolCount do
-        cpool[i] = readConstant(b)
+        local const = readConstant(b)
+        cpool[i] = const
+
+        if const.tag == 'long' or const.tag == 'double' then
+            i = i + 1
+            cpool[i] = const
+        end
     end
 
     return cpool
@@ -265,7 +271,7 @@ local function readAttribute(b, cpool)
     local name = cpool[nameIndex]
 
     if not name or name.tag ~= 'utf8' then
-        error(string.format('Invalid attribute nameIndex: %u', nameIndex))
+        error(string.format('invalid attribute nameIndex: %u', nameIndex))
     end
 
     local length = b:read '4'
@@ -303,7 +309,7 @@ function readAttributes(attributesCount, b, cpool)
     return attributes
 end
 
-local function readFields(fieldsCount, b)
+local function readFields(fieldsCount, b, cpool)
     local fields = {}
 
     for i = 1, fieldsCount do
@@ -311,7 +317,7 @@ local function readFields(fieldsCount, b)
         local nameIndex = b:read '2'
         local descriptorIndex = b:read '2'
         local attributesCount = b:read '2'
-        local attributes = readAtributes(attributesCount)
+        local attributes = readAttributes(attributesCount, b, cpool)
 
         fields[i] = {
             accessFlags = accessFlags,
@@ -325,7 +331,7 @@ local function readFields(fieldsCount, b)
     return fields
 end
 
-local function readMethods(methodsCount, b)
+local function readMethods(methodsCount, b, cpool)
     local methods = {}
 
     for i = 1, methodsCount do
@@ -333,7 +339,7 @@ local function readMethods(methodsCount, b)
         local nameIndex = b:read '2'
         local descriptorIndex = b:read '2'
         local attributesCount = b:read '2'
-        local attributes = readAtributes(attributesCount)
+        local attributes = readAttributes(attributesCount, b, cpool)
 
         methods[i] = {
             accessFlags = accessFlags,
@@ -347,12 +353,11 @@ local function readMethods(methodsCount, b)
     return methods
 end
 
-local function defineClass(string)
-    local b = buffer.new(string)
+local function defineClass(b)
     local magic = b:read '4'
 
     if magic ~= 0xcafebabe then
-        error(string.format('Invalid magic number: 0x%08x', magic))
+        error(string.format('invalid magic number: 0x%08x', magic))
     end
 
     local minor = b:read '2'
@@ -360,7 +365,7 @@ local function defineClass(string)
 
     if major > 47 then
         -- Versions greater than JDK 1.3 are an error.
-        error(string.format('Unsupported class version %u.%u', major, minor))
+        error(string.format('unsupported class version %u.%u', major, minor))
     end
 
     local cpoolCount = (b:read '2') - 1
@@ -374,10 +379,10 @@ local function defineClass(string)
     local interfaces = readInterfaces(interfacesCount, b)
 
     local fieldsCount = b:read '2'
-    local fields = readFields(fieldsCount, b)
+    local fields = readFields(fieldsCount, b, cpool)
 
     local methodsCount = b:read '2'
-    local methods = readMethods(methodsCount, b)
+    local methods = readMethods(methodsCount, b, cpool)
 
     local attributesCount = b:read '2'
     local attributes = readAttributes(attributesCount, b, cpool)
