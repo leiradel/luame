@@ -4,10 +4,12 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "manifest.lua.h"
 #include "loader.lua.h"
+#include "luafy.lua.h"
+#include "utils.lua.h"
 
 int luaopen_buffer(lua_State*);
+int luaopen_proxyud(lua_State*);
 int luaopen_zip(lua_State*);
 
 typedef struct
@@ -36,10 +38,12 @@ module_t;
 // All modules that our searcher will know.
 static const module_t modules[] =
 {
-    MODL("manifest", manifest_lua),
-    MODL("loader",   loader_lua),
-    MODC("buffer",   luaopen_buffer),
-    MODC("zip",      luaopen_zip)
+    MODL("luame.loader",  loader_lua),
+    MODL("luame.luafy",   luafy_lua),
+    MODL("luame.utils",   utils_lua),
+    MODC("luame.buffer",  luaopen_buffer),
+    MODC("luame.proxyud", luaopen_proxyud),
+    MODC("luame.zip",     luaopen_zip)
 };
 
 #undef MODL

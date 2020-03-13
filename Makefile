@@ -23,13 +23,25 @@ ZLIB_OBJ_FILES = \
 	src/zlib/inffast.o \
 	src/zlib/zutil.o
 
-OBJ_FILES = src/buffer.o src/djb2.o src/zip.o src/modules.o src/main.o $(ZLIB_OBJ_FILES)
-LUA_FILES = src/manifest.lua.h src/loader.lua.h
+OBJ_FILES = \
+	src/djb2.o \
+	src/version.o \
+	src/buffer.o \
+	src/proxyud.o \
+	src/zip.o \
+	src/modules.o \
+	src/main.o \
+	$(ZLIB_OBJ_FILES)
+
+LUA_FILES = \
+	src/loader.lua.h \
+	src/luafy.lua.h \
+	src/utils.lua.h
 
 ifeq ($(DEBUG), 1)
 	CFLAGS += -O0 -g -DLUAME_DEBUG
 else
-	CFLAGS += -O2 -DLUAME_RELEASE
+	CFLAGS += -O2 -DLUAME_RELEASE -DNDEBUG
 endif
 
 all: test
@@ -37,9 +49,15 @@ all: test
 test: $(OBJ_FILES)
 	$(CC) -o $@ $+ $(LIBS)
 
+src/version.c: FORCE
+	cat etc/version.c.templ \
+		| sed s/HASH/`git rev-parse HEAD | tr -d "\n"`/g \
+		| sed s/VERSION/`git tag | sort -r -V | head -n1 | tr -d "\n"`/g \
+		> $@
+
 src/modules.o: $(LUA_FILES)
 
-clean:
+clean: FORCE
 	rm -f test $(OBJ_FILES) $(LUA_FILES)
 
-.PHONY: clean
+.PHONY: FORCE

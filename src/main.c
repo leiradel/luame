@@ -21,6 +21,22 @@ static int lua_main(lua_State* const L)
     void register_modules(lua_State* L);
     register_modules(L);
 
+#ifdef LUAME_DEBUG
+    lua_pushboolean(L, 0);
+#else
+    lua_pushboolean(L, 1);
+#endif
+
+    lua_setglobal(L, "_LUAME_DEBUG");
+
+    extern char const* const luame_githash;
+    lua_pushstring(L, luame_githash);
+    lua_setglobal(L, "_LUAME_GITHASH");
+
+    extern char const* const luame_version;
+    lua_pushstring(L, luame_version);
+    lua_setglobal(L, "_LUAME_VERSION");
+
     const int argc = lua_tointeger(L, 1);
     const char* const* const argv = (const char* const*)lua_touserdata(L, 2);
 

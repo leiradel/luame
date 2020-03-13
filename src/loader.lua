@@ -1,4 +1,23 @@
-local buffer = require 'buffer'
+local buffer = require 'luame.buffer'
+
+local function xlateAccessFlags(flags)
+    local set = {}
+
+    set.public    = (flags & 0x0001) ~= 0
+    set.private   = (flags & 0x0002) ~= 0
+    set.protected = (flags & 0x0004) ~= 0
+    set.static    = (flags & 0x0008) ~= 0
+    set.final     = (flags & 0x0010) ~= 0
+    set.super     = (flags & 0x0020) ~= 0
+    set.volatile  = (flags & 0x0040) ~= 0
+    set.transient = (flags & 0x0080) ~= 0
+    set.native    = (flags & 0x0100) ~= 0
+    set.interface = (flags & 0x0200) ~= 0
+    set.abstract  = (flags & 0x0400) ~= 0
+    set.strict    = (flags & 0x0800) ~= 0
+
+    return set
+end
 
 local function readConstantClass(b)
     return {
@@ -120,26 +139,28 @@ local function readConstant(b)
     end
 end
 
-local function readConstantPool(cpoolCount, b)
-    local cpool = {}
+local function readConstantPool(n, b)
+    local cpool = {n = n}
+    local i = 1
 
-    for i = 1, cpoolCount do
+    while i <= n do
         local const = readConstant(b)
         cpool[i] = const
+        i = i + 1
 
         if const.tag == 'long' or const.tag == 'double' then
+            -- Longs and doubles take two slots.
             i = i + 1
-            cpool[i] = const
         end
     end
 
     return cpool
 end
 
-local function readInterfaces(interfacesCount, b)
-    local interfaces = {}
+local function readInterfaces(n, b)
+    local interfaces = {n = n}
 
-    for i = 1, interfacesCount do
+    for i = 1, n do
         interfaces[i] = b:read '2'
     end
 
@@ -155,10 +176,10 @@ local function readConstantValue(b)
     }
 end
 
-local function readExceptionTable(tableLength, b)
-    local table = {}
+local function readExceptionTable(n, b)
+    local table = {n = n}
 
-    for i = 1, tableLength do
+    for i = 1, n do
         table[i] = {
             startPc = b:read '2',
             endPc = b:read '2',
@@ -174,7 +195,11 @@ local function readCode(b, cpool)
     local maxStack = b:read '2'
     local maxLocals = b:read '2'
     local codeLength = b:read '4'
-    local code = b:read(codeLength)
+
+    local pos = b:tell()
+    local code = b:sub(pos, pos + codeLength - 1)
+    b:seek(codeLength, 'cur')
+
     local exceptionTableLength = b:read '2'
     local exceptionTable = readExceptionTable(exceptionTableLength, b)
     local attributesCount = b:read '2'
@@ -184,26 +209,22 @@ local function readCode(b, cpool)
         tag = 'code',
         maxStack = maxStack,
         maxLocals = maxLocals,
-        codeLength = codeLength,
         code = code,
-        exceptionTableLength = exceptionTableLength,
         exceptionTable = exceptionTable,
-        attributesCount = attributesCount,
         attributes = attributes
     }
 end
 
 local function readExceptions(b)
-    local number = b:read '2'
-    local indexTable = {}
+    local n = b:read '2'
+    local indexTable = {n = n}
 
-    for i = 1, number do
+    for i = 1, n do
         indexTable[i] = b:read '2'
     end
 
     return {
         tag = 'exceptions',
-        number = number,
         indexTable = indexTable
     }
 end
@@ -222,10 +243,10 @@ local function readSourceFile(b)
 end
 
 local function readLineNumberTable(b)
-    local tableLength = b:read '2'
-    local table = {}
+    local n = b:read '2'
+    local table = {n = n}
 
-    for i = 1, tableLength do
+    for i = 1, n do
         table[i] = {
             startPc = b:read '2',
             lineNumber = b:read '2'
@@ -234,16 +255,15 @@ local function readLineNumberTable(b)
 
     return {
         tag = 'lineNumberTable',
-        tableLength = tableLength,
         table = table
     }
 end
 
 local function readLocalVariableTable(b)
-    local tableLength = b:read '2'
-    local table = {}
+    local n = b:read '2'
+    local table = {n = n}
 
-    for i = 1, tableLength do
+    for i = 1, n do
         table[i] = {
             startPc = b:read '2',
             length = b:read '2',
@@ -255,7 +275,6 @@ local function readLocalVariableTable(b)
 
     return {
         tag = 'localVariableTable',
-        tableLength = tableLength,
         table = table
     }
 end
@@ -266,11 +285,30 @@ local function readDeprecated(b)
     }
 end
 
+local function readInnerClasses(b)
+    local n = b:read '2'
+    local classes = {n = n}
+
+    for i = 1, n do
+        classes[i] = {
+            innerClassInfoIndex = b:read '2',
+            outerClassInfoIndex = b:read '2',
+            innerNameIndex = b:read '2',
+            innerClassAccessFlags = xlateAccessFlags(b:read '2')
+        }
+    end
+
+    return {
+        tag = 'innerClasses',
+        classes = classes
+    }
+end
+
 local function readAttribute(b, cpool)
     local nameIndex = b:read '2'
     local name = cpool[nameIndex]
 
-    if not name or name.tag ~= 'utf8' then
+    if type(name) ~= 'table' or name.tag ~= 'utf8' then
         error(string.format('invalid attribute nameIndex: %u', nameIndex))
     end
 
@@ -293,27 +331,35 @@ local function readAttribute(b, cpool)
         return readLocalVariableTable(b)
     elseif tag == 'Deprecated' then
         return readDeprecated(b)
+    elseif tag == 'InnerClasses' then
+        return readInnerClasses(b)
     else
+        print(tag)
         b:seek(length, 'cur')
     end
 end
 
--- Local since forward-declared above.
-function readAttributes(attributesCount, b, cpool)
-    local attributes = {}
+-- This function is local because of the forward-declare above.
+function readAttributes(n, b, cpool)
+    local attributes = {n = n}
 
-    for i = 1, attributesCount do
-        attributes[i] = readAttribute(b, cpool)
+    for i = 1, n do
+        local attribute = readAttribute(b, cpool)
+
+        if attribute then
+            attributes[i] = attribute
+            attributes[attribute.tag] = attribute
+        end
     end
 
     return attributes
 end
 
-local function readFields(fieldsCount, b, cpool)
-    local fields = {}
+local function readFields(n, b, cpool)
+    local fields = {n = n}
 
-    for i = 1, fieldsCount do
-        local accessFlags = b:read '2'
+    for i = 1, n do
+        local accessFlags = xlateAccessFlags(b:read '2')
         local nameIndex = b:read '2'
         local descriptorIndex = b:read '2'
         local attributesCount = b:read '2'
@@ -323,7 +369,6 @@ local function readFields(fieldsCount, b, cpool)
             accessFlags = accessFlags,
             nameIndex = nameIndex,
             descriptorIndex = descriptorIndex,
-            attributesCount = attributesCount,
             attributes = attributes
         }
     end
@@ -331,11 +376,11 @@ local function readFields(fieldsCount, b, cpool)
     return fields
 end
 
-local function readMethods(methodsCount, b, cpool)
-    local methods = {}
+local function readMethods(n, b, cpool)
+    local methods = {n = n}
 
-    for i = 1, methodsCount do
-        local accessFlags = b:read '2'
+    for i = 1, n do
+        local accessFlags = xlateAccessFlags(b:read '2')
         local nameIndex = b:read '2'
         local descriptorIndex = b:read '2'
         local attributesCount = b:read '2'
@@ -345,7 +390,6 @@ local function readMethods(methodsCount, b, cpool)
             accessFlags = accessFlags,
             nameIndex = nameIndex,
             descriptorIndex = descriptorIndex,
-            attributesCount = attributesCount,
             attributes = attributes
         }
     end
@@ -353,7 +397,7 @@ local function readMethods(methodsCount, b, cpool)
     return methods
 end
 
-local function defineClass(b)
+return function(b)
     local magic = b:read '4'
 
     if magic ~= 0xcafebabe then
@@ -371,7 +415,7 @@ local function defineClass(b)
     local cpoolCount = (b:read '2') - 1
     local cpool = readConstantPool(cpoolCount, b)
 
-    local accessFlags = b:read '2'
+    local accessFlags = xlateAccessFlags(b:read '2')
     local thisClass = b:read '2'
     local superClass = b:read '2'
     
@@ -391,20 +435,13 @@ local function defineClass(b)
         magic = magic,
         major = major,
         minor = minor,
-        constantPoolCount = cpoolCount,
         constantPool = cpool,
         accessFlags = accessFlags,
         thisClass = thisClass,
         superClass = superClass,
-        interfacesCount = interfacesCount,
         interfaces = interfaces,
-        fieldsCount = fieldsCount,
         fields = fields,
-        methodsCount = methodsCount,
         methods = methods,
-        attributesCount = attributesCount,
         attributes = attributes
     }
 end
-
-return defineClass
