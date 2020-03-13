@@ -79,7 +79,7 @@ static int open(lua_State* const L) {
     return 1;
 }
 
-int luaopen_zip(lua_State* const L) {
+LUAMOD_API int luaopen_zip(lua_State* const L) {
     static const luaL_Reg functions[] = {
         {"open", open},
         {NULL,   NULL}
