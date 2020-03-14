@@ -218,13 +218,13 @@ static int size(lua_State* const L) {
 static int sub(lua_State* const L) {
     buffer_t const* const self = check(L, 1);
     lua_Integer const begin = luaL_checkinteger(L, 2);
-    lua_Integer const end = luaL_checkinteger(L, 3);
+    lua_Integer const size = luaL_checkinteger(L, 3);
 
-    if (begin < 0 || end >= self->size || begin > end) {
-        return luaL_error(L, "invalid limits: %d and %d", begin, end);
+    if (begin < 0 || begin + size >= self->size) {
+        return luaL_error(L, "invalid limits: %d and %d", begin, size);
     }
 
-    return buffer_push(L, ((uint8_t const*)self->data) + begin, end - begin, 1);
+    return buffer_push(L, ((uint8_t const*)self->data) + begin, size, 1);
 }
 
 static int tostring(lua_State* const L) {
