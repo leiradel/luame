@@ -19,19 +19,17 @@ buffer_t;
 
 typedef union {
     int8_t b;
+    uint8_t z;
+    int16_t s;
     uint16_t c;
-    double d;
-    float f;
     int32_t i;
     int64_t j;
-    uint8_t z;
+    double d;
+    float f;
 
     uint8_t u1;
     uint16_t u2;
     uint32_t u4;
-
-    int16_t s2;
-    int32_t s4;
 
     uint8_t m[8];
 }
@@ -81,8 +79,8 @@ invalid_position:
             break;
 
         case 'C': // char
+        case 's': // short
         case '2': // u2
-        case 'o': // s2
             if (position + 2 > size) {
                 goto invalid_position;
             }
@@ -95,7 +93,6 @@ invalid_position:
         case 'I': // int
         case 'F': // float
         case '4': // u4
-        case 'O': // s4
             if (position + 4 > size) {
                 goto invalid_position;
             }
@@ -171,12 +168,11 @@ invalid_position:
         case 'Z': lua_pushboolean(L, conv.z);  return 1;
         case '1': lua_pushinteger(L, conv.u1); return 1;
         case 'C': lua_pushinteger(L, conv.c);  return 1;
+        case 's': lua_pushinteger(L, conv.s);  return 1;
         case '2': lua_pushinteger(L, conv.u2); return 1;
-        case 'o': lua_pushinteger(L, conv.s2); return 1;
         case 'I': lua_pushinteger(L, conv.i);  return 1;
         case 'F': lua_pushnumber(L, conv.f);   return 1;
         case '4': lua_pushinteger(L, conv.u4); return 1;
-        case 'O': lua_pushinteger(L, conv.s4); return 1;
         case 'J': lua_pushinteger(L, conv.j);  return 1;
         case 'D': lua_pushnumber(L, conv.d);   return 1;
     }
