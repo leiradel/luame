@@ -296,7 +296,7 @@ static int new_(lua_State* const L) {
     }
 
     memcpy(data, string, length);
-    return buffer_push(L, data, length, LUA_NOREF);
+    return buffer_push(L, data, length, 0);
 }
 
 LUAMOD_API int luaopen_buffer(lua_State* const L) {
