@@ -13,6 +13,13 @@ static unzFile* check(lua_State* const L, int const index) {
     return (unzFile*)luaL_checkudata(L, index, UNZIP_MT);
 }
 
+static int exists(lua_State* const L) {
+    unzFile* const self = check(L, 1);
+    char const* const path = luaL_checkstring(L, 2);
+    lua_pushboolean(L, unzLocateFile(*self, path, 1) == UNZ_OK);
+    return 1;
+}
+
 static int readzip(lua_State* const L) {
     unzFile* const self = check(L, 1);
     char const* const path = luaL_checkstring(L, 2);
@@ -44,7 +51,7 @@ static int readzip(lua_State* const L) {
     }
 
     unzCloseCurrentFile(*self);
-    return buffer_push(L, buffer, (size_t)info.uncompressed_size, LUA_NOREF);
+    return buffer_push(L, buffer, (size_t)info.uncompressed_size, 0);
 }
 
 static int gc(lua_State* const L) {
@@ -53,19 +60,15 @@ static int gc(lua_State* const L) {
     return 0;
 }
 
-static int open(lua_State* const L) {
-    char const* const path = luaL_checkstring(L, 1);
+int zip_push(lua_State* const L, unzFile file) {
     unzFile* const self = (unzFile*)lua_newuserdata(L, sizeof(unzFile));
-    *self = unzOpen(path);
-
-    if (*self == NULL) {
-        return luaL_error(L, "error opening archive \"%s\"", path);
-    }
+    *self = file;
 
     if (luaL_newmetatable(L, UNZIP_MT)) {
         static const luaL_Reg methods[] = {
-            {"read", readzip},
-            {NULL,   NULL}
+            {"exists", exists},
+            {"read",   readzip},
+            {NULL,     NULL}
         };
 
         luaL_newlib(L, methods);
@@ -77,6 +80,17 @@ static int open(lua_State* const L) {
 
     lua_setmetatable(L, -2);
     return 1;
+}
+
+static int open(lua_State* const L) {
+    char const* const path = luaL_checkstring(L, 1);
+    unzFile file = unzOpen(path);
+
+    if (file == NULL) {
+        return luaL_error(L, "error opening archive \"%s\"", path);
+    }
+
+    return zip_push(L, file);
 }
 
 LUAMOD_API int luaopen_zip(lua_State* const L) {

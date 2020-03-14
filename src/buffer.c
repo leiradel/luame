@@ -253,7 +253,7 @@ int buffer_push(lua_State* const L, void const* const data, size_t const length,
     self->size = length;
     self->position = 0;
 
-    if (parentIndex != LUA_NOREF) {
+    if (parentIndex != 0) {
         lua_pushvalue(L, parentIndex);
         self->parentRef = luaL_ref(L, LUA_REGISTRYINDEX);
     }
