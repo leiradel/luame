@@ -13,8 +13,8 @@
 	lua etc/patch.lua $@
 
 CC ?= gcc
-CFLAGS = -std=c99 -Wall
-INCLUDES = -Isrc -Isrc/zlib/contrib/minizip
+CFLAGS = -std=c99 -Wall -DNOBYFOUR
+INCLUDES = -Isrc -Isrc/zip -Isrc/zlib/contrib/minizip
 LIBS = -llua -lm -ldl
 
 ZLIB_OBJ_FILES = \
@@ -29,6 +29,7 @@ ZLIB_OBJ_FILES = \
 
 OBJ_FILES = \
 	src/classes.o \
+	src/crc32.o \
 	src/djb2.o \
 	src/buffer.o \
 	src/proxyud.o \

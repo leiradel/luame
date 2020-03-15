@@ -13,6 +13,7 @@
 
 int luaopen_buffer(lua_State*);
 int luaopen_classes(lua_State*);
+int luaopen_crc32(lua_State*);
 int luaopen_proxyud(lua_State*);
 int luaopen_zip(lua_State*);
 
@@ -50,6 +51,7 @@ static const module_t modules[] =
     MODL("luame.vm",       vm_lua),
     MODC("luame.buffer",   luaopen_buffer),
     MODC("luame.classes",  luaopen_classes),
+    MODC("luame.crc32",    luaopen_crc32),
     MODC("luame.proxyud",  luaopen_proxyud),
     MODC("luame.zip",      luaopen_zip)
 };
