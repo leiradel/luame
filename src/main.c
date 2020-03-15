@@ -22,9 +22,9 @@ static int lua_main(lua_State* const L)
     register_modules(L);
 
 #ifdef LUAME_DEBUG
-    lua_pushboolean(L, 0);
-#else
     lua_pushboolean(L, 1);
+#else
+    lua_pushboolean(L, 0);
 #endif
 
     lua_setglobal(L, "_LUAME_DEBUG");

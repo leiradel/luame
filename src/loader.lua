@@ -1,4 +1,4 @@
-local buffer = require 'luame.buffer'
+local log = require 'luame.log'
 
 local function xlateAccessFlags(flags)
     local set = {}
@@ -197,7 +197,7 @@ local function readCode(b, cpool)
     local codeLength = b:read '4'
 
     local pos = b:tell()
-    local code = b:sub(pos, pos + codeLength - 1)
+    local code = b:sub(pos, codeLength)
     b:seek(codeLength, 'cur')
 
     local exceptionTableLength = b:read '2'
@@ -304,6 +304,8 @@ local function readInnerClasses(b)
     }
 end
 
+local warned = _LUAME_DEBUG and {} or nil
+
 local function readAttribute(b, cpool)
     local nameIndex = b:read '2'
     local name = cpool[nameIndex]
@@ -334,7 +336,13 @@ local function readAttribute(b, cpool)
     elseif tag == 'InnerClasses' then
         return readInnerClasses(b)
     else
-        print(tag)
+        if _LUAME_DEBUG then
+            if not warned[tag] then
+                log.warn('Skipping unknown attribute ', tag, ' (only showed once)')
+                warned[tag] = true
+            end
+        end
+
         b:seek(length, 'cur')
     end
 end
@@ -365,12 +373,18 @@ local function readFields(n, b, cpool)
         local attributesCount = b:read '2'
         local attributes = readAttributes(attributesCount, b, cpool)
 
-        fields[i] = {
+        local field = {
             accessFlags = accessFlags,
             nameIndex = nameIndex,
             descriptorIndex = descriptorIndex,
             attributes = attributes
         }
+
+        local name = cpool[nameIndex].bytes
+        local descriptor = cpool[descriptorIndex].bytes
+
+        fields[i] = field
+        fields[string.format('%s(%s)', name, descriptor)] = field
     end
 
     return fields
@@ -386,12 +400,18 @@ local function readMethods(n, b, cpool)
         local attributesCount = b:read '2'
         local attributes = readAttributes(attributesCount, b, cpool)
 
-        methods[i] = {
+        local method = {
             accessFlags = accessFlags,
             nameIndex = nameIndex,
             descriptorIndex = descriptorIndex,
             attributes = attributes
         }
+
+        local name = cpool[nameIndex].bytes
+        local descriptor = cpool[descriptorIndex].bytes
+
+        methods[i] = method
+        methods[string.format('%s%s', name, descriptor)] = method
     end
 
     return methods
