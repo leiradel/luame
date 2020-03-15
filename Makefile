@@ -3,7 +3,7 @@
 
 %.lua.h : %.lua
 	xxd -i $< \
-		| sed "s/src_//" \
+		| sed "s/src_lua_//" \
 		| sed "s/unsigned char/static const char/" \
 		| sed "s/unsigned int/static const size_t/" \
 		> $@
@@ -39,12 +39,12 @@ OBJ_FILES = \
 	$(ZLIB_OBJ_FILES)
 
 LUA_FILES = \
-	src/bytecode.lua.h \
-	src/loader.lua.h \
-	src/log.lua.h \
-	src/luafy.lua.h \
-	src/utils.lua.h \
-	src/vm.lua.h
+	src/lua/bytecode.lua.h \
+	src/lua/loader.lua.h \
+	src/lua/log.lua.h \
+	src/lua/luafy.lua.h \
+	src/lua/utils.lua.h \
+	src/lua/vm.lua.h
 
 CLASS_FILES = \
 	src/classes/java/lang/Thread.class \

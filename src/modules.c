@@ -4,12 +4,12 @@
 #include <lua.h>
 #include <lauxlib.h>
 
-#include "bytecode.lua.h"
-#include "loader.lua.h"
-#include "log.lua.h"
-#include "luafy.lua.h"
-#include "utils.lua.h"
-#include "vm.lua.h"
+#include "lua/bytecode.lua.h"
+#include "lua/loader.lua.h"
+#include "lua/log.lua.h"
+#include "lua/luafy.lua.h"
+#include "lua/utils.lua.h"
+#include "lua/vm.lua.h"
 
 int luaopen_buffer(lua_State*);
 int luaopen_classes(lua_State*);
