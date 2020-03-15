@@ -1,6 +1,7 @@
 *.lua.h
 *.class
 src/version.c
+src/classes.zip.h
 
 # Created by https://www.gitignore.io/api/c,lua,linux,macos,windows
 # Edit at https://www.gitignore.io/?templates=c,lua,linux,macos,windows
