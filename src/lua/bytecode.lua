@@ -157,7 +157,7 @@ end
 -- getfield
 deltas[0xb4] = function(b, cpool)
     local delta = deltas[0xb2](b, cpool)
-    return delta and (delta + 1)
+    return delta and (delta - 1)
 end
 
 -- putfield
