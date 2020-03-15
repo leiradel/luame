@@ -22,8 +22,8 @@ local names = { [0] =
     "dstore_1",     "dstore_2",        "dstore_3",      "astore_0",
     "astore_1",     "astore_2",        "astore_3",      "iastore",
     "lastore",      "fastore",         "dastore",       "aastore",
-    "bastore",      "castore",         "sastore",       "pop2",
-    nil --[[58]],   "dup",             "dup_x1",        "dup_x2",
+    "bastore",      "castore",         "sastore",       "pop",
+    "pop2",         "dup",             "dup_x1",        "dup_x2",
     "dup2",         "dup2_x1",         "dup2_x2",       "swap",
     "iadd",         "ladd",            "fadd",          "dadd",
     "isub",         "lsub",            "fsub",          "dsub",
@@ -73,7 +73,7 @@ local sizes = { [0] =
       1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
       1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   1,   1,   1,   1,   1,
       1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-      1,   1,   1,   1,   1,   1,   1,   1, nil,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
       1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
       1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
       1,   1,   1,   1,   3,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
@@ -89,20 +89,20 @@ local sizes = { [0] =
 -- tableswitch
 sizes[0xaa] = function(b)
     local pos = b:tell()
-    local pad = (pos + 3) & ~3
+    local pad = (4 - (pos & 3)) & 3
     b:seek(pad, 'cur')
 
     b:read 'I' -- default
     local low = b:read 'I'
-    local hight = b:read 'I'
+    local high = b:read 'I'
 
-    return 1 + pad + 4 + 4 + 4 + (hight - low + 1) * 4
+    return 1 + pad + 4 + 4 + 4 + (high - low + 1) * 4
 end
 
 -- lookupswitch
 sizes[0xab] = function(b)
     local pos = b:tell()
-    local pad = (pos + 3) & ~3
+    local pad = (4 - (pos & 3)) & 3
     b:seek(pad, 'cur')
 
     b:read 'I' -- default
@@ -123,7 +123,7 @@ local deltas = { [0] =
       2,   2,   1,   1,   1,   1,   2,   2,   2,   2,   1,   1,   1,   1,  -1,   0,
      -1,   0,  -1,  -1,  -1,  -1,  -1,  -2,  -1,  -2,  -1,  -1,  -1,  -1,  -1,  -2,
      -2,  -2,  -2,  -1,  -1,  -1,  -1,  -2,  -2,  -2,  -2,  -1,  -1,  -1,  -1,  -3,
-     -4,  -3,  -4,  -3,  -3,  -3,  -3,  -2, nil,   1,   1,   1,   2,   2,   2,   0,
+     -4,  -3,  -4,  -3,  -3,  -3,  -3,  -1,  -2,   1,   1,   1,   2,   2,   2,   0,
      -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,
      -1,  -2,  -1,  -2,   0,   0,   0,   0,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -2,
      -1,  -2,  -1,  -2,   0,   1,   0,   1,  -1,  -1,   0,   0,   1,   1,  -1,   0,
@@ -226,7 +226,7 @@ return {
 
             b:seek(pc, 'set')
             local op = b:read '1'
-
+            
             local name = names[op]
             local size = type(sizes[op]) == 'number' and sizes[op] or sizes[op](b)
             local delta = type(deltas[op]) == 'number' and deltas[op] or deltas[op](b, cpool)
