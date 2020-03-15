@@ -13,6 +13,82 @@ local function dump(str)
     return string.format('-- %s', table.concat(hex, ' '))
 end
 
+local f = string.format
+local r = string.rep
+
+local function q(str)
+    return f('%q', str)
+end
+
+local function h(x, d)
+    local fmt = f('%%0%ux', d or 4)
+    return f(fmt, x)
+end
+
+local function collectJumps(method, cpool)
+    local near = {
+        ['goto'] = true, jsr = true,
+        if_acmpeq = true, if_acmpne = true,
+        if_icmpeq = true, if_icmpne = true, if_icmplt = true, if_icmpge = true, if_icmpgt = true, if_icmple = true,
+        ifeq = true, ifne = true, iflt = true, ifge = true, ifgt = true, ifle = true,
+        ifnonnull = true, ifnull = true,
+    }
+
+    local b = method.attributes.code.code
+    local jumps = {}
+    local sp = 0
+
+    for pc, op, name, size, deltasp in bytecode.opcodes(b, cpool) do
+        sp = sp + deltasp -- compute SP for *after* the insn is executed!
+        b:seek(pc + 1, 'set')
+
+        if near[name] then
+            local target = pc + b:read 's'
+            jumps[#jumps + 1] = {source = pc, target = target, sp = sp, jsr = name == 'jsr'}
+        elseif name == 'goto_w' or name == 'jsr_w' then
+            local target = pc + b:read 'I'
+            jumps[#jumps + 1] = {source = pc, target = target, sp = sp, jsr = name == 'jsr'}
+        elseif name == 'lookupswitch' then
+            local pc = b:tell() - 1
+            b:seek((pc + 1 + 3) & ~3, 'set')
+            local default = b:read 'I'
+            local npairs = b:read 'I'
+    
+            jumps[#jumps + 1] = {source = pc, target = pc + default, sp = sp, jsr = false}
+            
+            for i = 1, npairs do
+                local match = b:read 'I'
+                local offset = b:read 'I'
+                jumps[#jumps + 1] = {source = pc, target = pc + offset, sp = sp, jsr = false}
+            end
+        elseif name == 'tableswitch' then
+            local pc = b:tell() - 1
+            b:seek((pc + 1 + 3) & ~3, 'set')
+            local default = b:read 'I'
+            local low = b:read 'I'
+            local high = b:read 'I'
+            local npairs = high - low + 1
+
+            jumps[#jumps + 1] = {source = pc, target = pc + default, sp = sp, jsr = false}
+
+            for i = 1, npairs do
+                local offset = b:read 'I'
+                jumps[#jumps + 1] = {source = pc, target = pc + offset, sp = sp, jsr = false}
+            end
+        end
+    end
+
+    local et = method.attributes.code.exceptionTable
+
+    for i = 1, et.n do
+        local e = et[i]
+        jumps[#jumps + 1] = {source = e.startPc, target = e.handlerPc, sp = 1, jsr = false}
+    end
+
+    jumps.n = #jumps
+    return jumps
+end
+
 local function invoke(lua, cpool, index, static, sp)
     local methodref = cpool[index]
     local className = cpool[cpool[methodref.classIndex].nameIndex].bytes
@@ -30,16 +106,16 @@ local function invoke(lua, cpool, index, static, sp)
     end
 
     for i = -slots, -1 do
-        params[#params + 1] = string.format('s%u', sp + i)
+        params[#params + 1] = f('s%u', sp + i)
     end
 
     lua:indentation()
 
     if not utils.isVoid(descriptor) then
-        lua:write(string.format('s%u = ', sp - utils.countSlots(descriptor)))
+        lua:write('s', sp - slots, ' = ')
     end
 
-    lua:write(string.format('_%08x[%q](%s) -- %s', crc32(className), name .. descriptor, table.concat(params, ', '), className))
+    lua:write('_', h(crc32(className), 8), '[', q(name .. descriptor), '](', table.concat(params, ', '), ') -- ', className)
     lua:eol()
 end
 
@@ -104,7 +180,7 @@ local generators = {
         local value = constant.bytes
 
         if constant.tag == 'string' then
-            value = string.format('%q', class.constantPool[constant.stringIndex].bytes)
+            value = q(class.constantPool[constant.stringIndex].bytes)
         end
 
         lua:println('s', sp, ' = ', value)
@@ -114,7 +190,7 @@ local generators = {
         local value = constant.bytes
 
         if constant.tag == 'string' then
-            value = string.format('%q', class.constantPool[constant.stringIndex].bytes)
+            value = q(class.constantPool[constant.stringIndex].bytes)
         end
 
         lua:println('s', sp, ' = ', value)
@@ -394,83 +470,63 @@ local generators = {
     end,
     [0x60] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-        return sp - 1
     end,
     [0x61] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-        return sp - 1
     end,
     [0x62] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-        return sp - 1
     end,
     [0x63] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-        return sp - 1
     end,
     [0x64] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-        return sp - 1
     end,
     [0x65] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-        return sp - 1
     end,
     [0x66] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-        return sp - 1
     end,
     [0x67] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-        return sp - 1
     end,
     [0x68] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-        return sp - 1
     end,
     [0x69] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-        return sp - 1
     end,
     [0x6a] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-        return sp - 1
     end,
     [0x6b] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-        return sp - 1
     end,
     [0x6c] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' // s', sp - 1)
-        return sp - 1
     end,
     [0x6d] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' // s', sp - 1)
-        return sp - 1
     end,
     [0x6e] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' / s', sp - 1)
-        return sp - 1
     end,
     [0x6f] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' / s', sp - 1)
-        return sp - 1
     end,
     [0x70] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-        return sp - 1
     end,
     [0x71] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-        return sp - 1
     end,
     [0x72] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-        return sp - 1
     end,
     [0x73] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-        return sp - 1
     end,
     [0x74] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 1, ' = -s', sp - 1)
@@ -486,51 +542,39 @@ local generators = {
     end,
     [0x78] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' << s', sp - 1)
-        return sp - 1
     end,
     [0x79] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' << s', sp - 1)
-        return sp - 1
     end,
     [0x7a] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-        return sp - 1
     end,
     [0x7b] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-        return sp - 1
     end,
     [0x7c] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-        return sp - 1
     end,
     [0x7d] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-        return sp - 1
     end,
     [0x7e] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' & s', sp - 1)
-        return sp - 1
     end,
     [0x7f] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' & s', sp - 1)
-        return sp - 1
     end,
     [0x80] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' | s', sp - 1)
-        return sp - 1
     end,
     [0x81] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' | s', sp - 1)
-        return sp - 1
     end,
     [0x82] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' ~ s', sp - 1)
-        return sp - 1
     end,
     [0x83] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = s', sp - 2, ' ~ s', sp - 1)
-        return sp - 1
     end,
     [0x84] = function(vm, lua, class, sp, b)
         local index = b:read('1')
@@ -574,145 +618,109 @@ local generators = {
         lua:println('s', sp - 1, ' = doubleToFloat(s', sp - 1, ')')
     end,
     [0x91] = function(vm, lua, class, sp, b)
-        lua_println('s', sp - 1, ' = intToByte(s', sp - 1, ')')
+        lua:println('s', sp - 1, ' = intToByte(s', sp - 1, ')')
     end,
     [0x92] = function(vm, lua, class, sp, b)
-        lua_println('s', sp - 1, ' = intToChar(s', sp - 1, ')')
+        lua:println('s', sp - 1, ' = intToChar(s', sp - 1, ')')
     end,
     [0x93] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 1, ' = intToShort(s', sp - 1, ')')
     end,
     [0x94] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = longCompare(s', sp - 2, ', s', sp - 1, ')')
-        return sp - 1
     end,
     [0x95] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = floatCompareLess(s', sp - 2, ', s', sp - 1, ')')
-        return sp - 1
     end,
     [0x96] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = floatCompareGreater(s', sp - 2, ', s', sp - 1, ')')
-        return sp - 1
     end,
     [0x97] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = doubleCompareLess(s', sp - 2, ', s', sp - 1, ')')
-        return sp - 1
     end,
     [0x98] = function(vm, lua, class, sp, b)
         lua:println('s', sp - 2, ' = doubleCompareGreater(s', sp - 2, ', s', sp - 1, ')')
-        return sp - 1
     end,
     [0x99] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' == 0 then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' == 0 then goto _', h(pc + offset, 4))
     end,
     [0x9a] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' ~= 0 then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' ~= 0 then goto _', h(pc + offset, 4))
     end,
     [0x9b] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' < 0 then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' < 0 then goto _', h(pc + offset, 4))
     end,
     [0x9c] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' >= 0 then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' >= 0 then goto _', h(pc + offset, 4))
     end,
     [0x9d] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' > 0 then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' > 0 then goto _', h(pc + offset, 4))
     end,
     [0x9e] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' <= 0 then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' <= 0 then goto _', h(pc + offset, 4))
     end,
     [0x9f] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' == s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' == s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa0] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' ~= s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' ~= s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa1] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' < s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' < s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa2] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' >= s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' >= s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa3] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' > s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' > s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa4] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' <= s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' <= s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa5] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' == s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' == s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa6] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 2, ' ~= s', sp - 1, ' then goto ', label)
-        return sp - 2
+        lua:println('if s', sp - 2, ' ~= s', sp - 1, ' then goto _', h(pc + offset, 4))
     end,
     [0xa7] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('goto ', label)
+        lua:println('goto _', h(pc + offset, 4))
     end,
     [0xa8] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        local label = string.format('_%04x', pc + offset)
         lua:println('s', sp, ' = ', pc + 3)
-        lua:println('goto ', label)
-        return sp + 1
+        lua:println('goto _', h(pc + offset, 4))
     end,
     [0xa9] = function(vm, lua, class, sp, b)
         lua:println(dump(b:read(1)))
@@ -731,19 +739,17 @@ local generators = {
 
         for i = 1, npairs do
             local offset = b:read 'I'
-            local label = string.format('_%04x', pc + offset)
-            lua:println(i == 1 and '    if' or '    elseif', ' index == ', i - 1, ' then goto _', label)
+            lua:println(i == 1 and '    if' or '    elseif', ' index == ', i - 1, ' then goto _', h(pc + offset, 4))
         end
 
         if npairs == 0 then
-            lua:println('    goto ', string.format('_%04x', pc + default))
+            lua:println('    goto _', h(pc + default, 4))
         else
-            lua:println('    else goto ', string.format('_%04x', pc + default))
+            lua:println('    else goto _', h(pc + default, 4))
             lua:println '    end'
         end
 
-        lua:prinln 'end'
-        return sp - 1
+        lua:println 'end'
     end,
     [0xab] = function(vm, lua, class, sp, b)
         -- TODO generate a binary search.
@@ -755,18 +761,15 @@ local generators = {
         for i = 1, npairs do
             local match = b:read 'I'
             local offset = b:read 'I'
-            local label = string.format('_%04x', pc + offset)
-            lua:println(i == 1 and 'if' or 'elseif', ' s', sp - 1, ' == ', match, ' then goto _', label)
+            lua:println(i == 1 and 'if' or 'elseif', ' s', sp - 1, ' == ', match, ' then goto _', h(pc + offset, 4))
         end
 
         if npairs == 0 then
-            lua:println('goto ', string.format('_%04x', pc + default))
+            lua:println('goto _', h(pc + default, 4))
         else
-            lua:println('else goto ', string.format('_%04x', pc + default))
+            lua:println('else goto _', h(pc + default, 4))
             lua:println('end')
         end
-
-        return sp - 1
     end,
     [0xac] = function(vm, lua, class, sp, b)
         lua:println('return s', sp - 1)
@@ -802,7 +805,7 @@ local generators = {
 
         lua.scratch.imports[className] = true
 
-        lua:println(string.format('s%u = _%08x[%q] -- %s %s', sp, crc32(className), name, className, descriptor))
+        lua:println('s', sp, ' = _', h(crc32(className), 8), '[', q(name), '] -- ', className, ' ', descriptor)
     end,
     [0xb3] = function(vm, lua, class, sp, b)
         local cpool = class.constantPool
@@ -814,7 +817,7 @@ local generators = {
 
         lua.scratch.imports[className] = true
 
-        lua:println(string.format('_%08x[%q] = s%u -- %s %s', crc32(className), name, sp - 1, className, descriptor))
+        lua:println('_', h(crc32(className), 8), '[', q(name), '] = s', sp - 1, ' -- ', className, ' ', descriptor)
     end,
     [0xb4] = function(vm, lua, class, sp, b)
         local cpool = class.constantPool
@@ -824,7 +827,7 @@ local generators = {
         local name = cpool[nameAndType.nameIndex].bytes
         local descriptor = cpool[nameAndType.descriptorIndex].bytes
 
-        lua:println(string.format('s%u = s%u[%q] -- %s %s', sp - 1, sp - 1, name, className, descriptor))
+        lua:println('s', sp - 1, ' = s', sp - 1, '[', q(name), '] -- ', className, ' ', descriptor)
     end,
     [0xb5] = function(vm, lua, class, sp, b)
         local cpool = class.constantPool
@@ -834,7 +837,7 @@ local generators = {
         local name = cpool[nameAndType.nameIndex].bytes
         local descriptor = cpool[nameAndType.descriptorIndex].bytes
 
-        lua:println(string.format('s%u[%q] = s%u -- %s %s', sp - 1, name, sp - 1, className, descriptor))
+        lua:println('s', sp - 1, '[', q(name), '] = s', sp - 1, ' -- ', className, ' ', descriptor)
     end,
     [0xb6] = function(vm, lua, class, sp, b)
         invoke(lua, class.constantPool, b:read '2', false, sp)
@@ -881,10 +884,8 @@ local generators = {
         lua:println('-- ', type.tag)
     end,
     [0xc2] = function(vm, lua, class, sp, b)
-        return sp - 1
     end,
     [0xc3] = function(vm, lua, class, sp, b)
-        return sp - 1
     end,
     [0xc4] = function(vm, lua, class, sp, b)
         lua:println(dump(b:read(3)))
@@ -895,58 +896,53 @@ local generators = {
         local counts = {}
 
         for i = dimensions, 1, -1 do
-            counts[#counts + 1] = string.format('s%u', sp - i)
+            counts[#counts + 1] = f('s%u', sp - i)
         end
 
         count = table.concat(counts, ', ')
         lua:println('s', sp - dimensions, ' = newMultidimensionalArray("', type, '", ', count, ') -- multianewarray')
-        return sp - dimensions + 1
     end,
     [0xc6] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read('s')
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' == nil then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' == nil then goto _', h(pc + offset, 4))
     end,
     [0xc7] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read('s')
-        local label = string.format('_%04x', pc + offset)
-        lua:println('if s', sp - 1, ' ~= nil then goto ', label)
-        return sp - 1
+        lua:println('if s', sp - 1, ' ~= nil then goto _', h(pc + offset, 4))
     end,
     [0xc8] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 'I'
-        local label = string.format('_%04x', pc + offset)
-        lua:println('goto ', label)
+        lua:println('goto _', h(pc + offset, 4))
     end,
     [0xc9] = function(vm, lua, class, sp, b)
         local pc = b:tell() - 1
         local offset = b:read 'I'
-        local label = string.format('_%04x', pc + offset)
-        lua:println '-- jsr_w'
         lua:println('s', sp, ' = ', pc + 5)
-        lua:println('goto ', label)
-        return sp + 1
+        lua:println('goto _', h(pc + offset, 4))
     end,
 }
 
-local function generateCode(vm, imports, lua, class, code)
+local function generateCode(vm, lua, class, code, jumps)
     local sp = 0
     local b = code.code
 
     for pc, op, name, size, deltasp in bytecode.opcodes(b, class.constantPool) do
-        lua:println(string.format('-- %04x %02x %-16s %d %2d %d', pc, op, name, size, deltasp, sp))
+        local addr = f('-- %04x     ', pc)
 
-        do
-            local label = string.format('%04x', pc)
+        for i = 1, jumps.n do
+            local jump = jumps[i]
 
-            if lua.scratch.targets[label] then
-                lua:println(string.format('::_%s::', label))
+            if jump.target == pc then
+                sp = jump.sp
+                addr = f('::_%04x:: --', pc)
+                break
             end
         end
+
+        lua:println(addr, ' ', h(op, 2), ' ', name, r(' ', 16 - #name), size, ' ', f('%2d', deltasp), ' ', f('%2u', sp))
 
         b:seek(pc + 1, 'set')
         generators[op](vm, lua, class, sp, b)
@@ -970,78 +966,46 @@ return function(vm, class)
     lua:indent()
 
     for i = 1, class.methods.n do
+        local cpool = class.constantPool
         local method = class.methods[i]
-        local name = class.constantPool[method.nameIndex].bytes
-        local descriptor = class.constantPool[method.descriptorIndex].bytes
+        local name = cpool[method.nameIndex].bytes
+        local descriptor = cpool[method.descriptorIndex].bytes
 
         do
-            local params = {}
+            lua:indentation()
+            lua:write('[', q(name .. descriptor), '] = function(')
+            local comma = ''
 
             for i = 1, method.attributes.code.maxLocals do
-                params[i] = string.format('l%u', i - 1)
+                lua:write(comma, 'l', i - 1)
+                comma = ', '
             end
 
-            lua:println(string.format('[%q]', name .. descriptor), ' = function(', table.concat(params,', '), ')')
+            lua:write(')')
+            lua:eol()
         end
 
         lua:indent()
 
         do
             if method.attributes.code.maxStack > 0 then
-                local stack = {}
+                lua:indentation()
+                lua:write('local ')
+                local comma = ''
 
                 for i = 1, method.attributes.code.maxStack do
-                    stack[i] = string.format('s%u', i - 1)
+                    lua:write(comma, 's', i - 1)
+                    comma = ', '
                 end
 
-                lua:println('local ', table.concat(stack, ', '))
+                lua:eol()
             end
         end
 
         lua:eol()
 
-        do
-            local near = {
-                ['goto'] = true, jsr = true,
-                if_acmpeq = true, if_acmpne = true,
-                if_icmpeq = true, if_icmpne = true, if_icmplt = true, if_icmpge = true, if_icmpgt = true, if_icmple = true,
-                ifeq = true, ifne = true, iflt = true, ifge = true, ifgt = true, ifle = true,
-                ifnonnull = true, ifnull = true,
-            }
-
-            lua.scratch.targets = {}
-            lua.scratch.jsrTargets = {}
-
-            local b = method.attributes.code.code
-
-            for pc, op, name, size, deltasp in bytecode.opcodes(b) do
-                local source, target
-
-                b:seek(pc + 1, 'set')
-
-                if near[name] then
-                    source, target = pc, pc + b:read 's'
-                elseif name == 'goto_w' or name == 'jsr_w' then
-                    source, target = pc, pc + b:read 'I'
-                end
-
-                if source then
-                    source = string.format('%04x', source)
-                    target = string.format('%04x', target)
-
-                    lua.scratch.targets[target] = true
-
-                    if name == 'jsr' or name == 'jsr_w' then
-                        local sources = lua.scratch.jsrTargets[target] or {}
-                        lua.scratch.jsrTargets = sources
-
-                        sources[#sources + 1] = source
-                    end
-                end
-            end
-        end
-
-        generateCode(vm, imports, lua, class, method.attributes.code)
+        local jumps = collectJumps(method, cpool)
+        generateCode(vm, lua, class, method.attributes.code, jumps)
 
         lua:unindent()
         lua:println 'end,'
@@ -1054,7 +1018,7 @@ return function(vm, class)
     lua:swap()
 
     for className in pairs(lua.scratch.imports) do
-        lua:println(string.format('local _%08x = vm:load(%q)', crc32(className), className))
+        lua:println('local _', h(crc32(className), 8), ' = vm:load(', q(className), ')')
     end
 
     lua:eol()
