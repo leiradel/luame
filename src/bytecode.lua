@@ -1,7 +1,7 @@
 local utils = require 'luame.utils'
 
-local names = {
-    [0] = "nop",    "aconst_null",     "iconst_m1",     "iconst_0",
+local names = { [0] =
+    "nop",          "aconst_null",     "iconst_m1",     "iconst_0",
     "iconst_1",     "iconst_2",        "iconst_3",      "iconst_4",
     "iconst_5",     "lconst_0",        "lconst_1",      "fconst_0",
     "fconst_1",     "fconst_2",        "dconst_0",      "dconst_1",
@@ -67,23 +67,23 @@ local names = {
     nil --[[fc]],   nil --[[fd]],      nil --[[fe]],    nil --[[ff]],
 }
 
-local sizes = {
-    [0] = 1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-          2,   3,   2,   3,   3,   2,   2,   2,   2,   2,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   1,   1, nil,   1,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   3,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-          1,   1,   1,   1,   1,   1,   1,   1,   1,   3,   3,   3,   3,   3,   3,   3,
-          3,   3,   3,   3,   3,   3,   3,   3,   3,   2, nil, nil,   1,   1,   1,   1,
-          1,   1,   3,   3,   3,   3,   3,   3,   3,   5, nil,   3,   2,   3,   1,   1,
-          3,   3,   1,   1, nil,   4,   3,   3,   5,   5, nil, nil, nil, nil, nil, nil,
-        nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-        nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-        nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+local sizes = { [0] =
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+      2,   3,   2,   3,   3,   2,   2,   2,   2,   2,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   2,   2,   2,   2,   2,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1, nil,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   3,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
+      1,   1,   1,   1,   1,   1,   1,   1,   1,   3,   3,   3,   3,   3,   3,   3,
+      3,   3,   3,   3,   3,   3,   3,   3,   3,   2, nil, nil,   1,   1,   1,   1,
+      1,   1,   3,   3,   3,   3,   3,   3,   3,   5, nil,   3,   2,   3,   1,   1,
+      3,   3,   1,   1, nil,   4,   3,   3,   5,   5, nil, nil, nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 }
 
 -- tableswitch
@@ -117,34 +117,74 @@ sizes[0xc4] = function(b)
     return op == 0x84 and 6 or 4
 end
 
-local deltas = {
-    [0] =  0,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-           1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,
-           1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  -1,  -1,
-          -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-          -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -3,
-          -3,  -3,  -3,  -3,  -3,  -3,  -3,  -2, nil,   1,   1,   1,   2,   2,   2,   0,
-          -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-          -1,  -1,  -1,  -1,   0,   0,   0,   0,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,
-          -1,  -1,  -1,  -1,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
-           0,   0,   0,   0,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -2,
-          -2,  -2,  -2,  -2,  -2,  -2,  -2,   0,   1,   0,  -1,  -1,   0,   0,   0,   0,
-           0,   0,   1,  -1,   0,  -2, nil, nil, nil, nil, nil,   1,   0,   0,   0,   0,
-           0,   0,  -1,  -1, nil, nil,  -1,  -1,   0,   1, nil, nil, nil, nil, nil, nil,
-         nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-         nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
-         nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+local deltas = { [0] =
+      0,   1,   1,   1,   1,   1,   1,   1,   1,   2,   2,   1,   1,   1,   2,   2,
+      1,   1,   1,   1,   2,   1,   2,   1,   2,   1,   1,   1,   1,   1,   2,   2,
+      2,   2,   1,   1,   1,   1,   2,   2,   2,   2,   1,   1,   1,   1,  -1,   0,
+     -1,   0,  -1,  -1,  -1,  -1,  -1,  -2,  -1,  -2,  -1,  -1,  -1,  -1,  -1,  -2,
+     -2,  -2,  -2,  -1,  -1,  -1,  -1,  -2,  -2,  -2,  -2,  -1,  -1,  -1,  -1,  -3,
+     -4,  -3,  -4,  -3,  -3,  -3,  -3,  -2, nil,   1,   1,   1,   2,   2,   2,   0,
+     -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,  -1,  -2,
+     -1,  -2,  -1,  -2,   0,   0,   0,   0,  -1,  -1,  -1,  -1,  -1,  -1,  -1,  -2,
+     -1,  -2,  -1,  -2,   0,   1,   0,   1,  -1,  -1,   0,   0,   1,   1,  -1,   0,
+     -1,   0,   0,   0,  -3,  -1,  -1,  -3,  -3,  -1,  -1,  -1,  -1,  -1,  -1,  -2,
+     -2,  -2,  -2,  -2,  -2,  -2,  -2,   0,   1,   0,  -1,  -1,  -1,  -2,  -1,  -2,
+     -1,   0, nil, nil, nil, nil, nil, nil, nil, nil, nil,   1,   0,   0,   0,   0,
+      0,   0,  -1,  -1, nil, nil,  -1,  -1,   0,   1, nil, nil, nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
+    nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil,
 }
+
+-- getstatic
+deltas[0xb2] = function(b, cpool)
+    if cpool then
+        local fieldref = cpool[b:read '2']
+        local nameAndType = cpool[fieldref.nameAndTypeIndex]
+        local descriptor = cpool[nameAndType.descriptorIndex]
+        return utils.countSlots(descriptor.bytes)
+    else
+        return nil
+    end
+end
+
+-- putstatic
+deltas[0xb3] = function(b, cpool)
+    local delta = deltas[0xb2](b, cpool)
+    return delta and (-delta)
+end
+
+-- getfield
+deltas[0xb4] = function(b, cpool)
+    local delta = deltas[0xb2](b, cpool)
+    return delta and (delta + 1)
+end
+
+-- putfield
+deltas[0xb5] = function(b, cpool)
+    local delta = deltas[0xb3](b, cpool)
+    return delta and (delta - 1)
+end
+
+-- invokevirtual
+deltas[0xb6] = function(b, cpool)
+    local delta = deltas[0xb8](b, cpool)
+    return delta and (delta - 1)
+end
+
+-- invokespecial
+deltas[0xb7] = function(b, cpool)
+    return deltas[0xb6](b, cpool)
+end
 
 -- invokestatic
 deltas[0xb8] = function(b, cpool)
     if cpool then
-        local index = b:read '2'
-        local methodref = cpool[index]
+        local methodref = cpool[b:read '2']
         local nameAndType = cpool[methodref.nameAndTypeIndex]
         local descriptor = cpool[nameAndType.descriptorIndex]
 
-        local delta = -utils.countParams(descriptor.bytes)
+        local delta = -utils.countSlots(descriptor.bytes)
 
         if not utils.isVoid(descriptor.bytes) then
             delta = delta + 1
@@ -156,17 +196,10 @@ deltas[0xb8] = function(b, cpool)
     end
 end
 
--- invokevirtual
-deltas[0xb6] = function(b, cpool)
-    local delta = deltas[0xb8](b, cpool)
-    return delta and (delta - 1)
-end
-
--- invokespecial
-deltas[0xb7] = deltas[0xb6]
-
 -- invokeinterface
-deltas[0xb9] = deltas[0xb6]
+deltas[0xb9] = function(b, cpool)
+    return deltas[0xb6](b, cpool)
+end
 
 -- wide
 deltas[0xc4] = function(b, cpool)
