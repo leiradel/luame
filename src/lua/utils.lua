@@ -123,8 +123,10 @@ return {
 
     codeGenerator = function()
         return {
+            header = {},
             code = {},
             level = 0,
+            scratch = {},
     
             indentation = function(self)
                 local code = self.code
@@ -160,9 +162,15 @@ return {
             end,
     
             finish = function(self)
+                local header = table.concat(self.header, '')
                 local code = table.concat(self.code, '')
-                self.code = nil
-                return code
+                return header .. code
+            end,
+
+            swap = function(self)
+                local header, code = self.code, self.header
+                self.header = header
+                self.code = code
             end
         }
     end
