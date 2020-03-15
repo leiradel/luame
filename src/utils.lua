@@ -43,7 +43,7 @@ return {
         local count = 0
     
         for _, _, _ in params(descriptor) do
-            local count = count + 1
+            count = count + 1
         end
     
         return count
@@ -53,7 +53,7 @@ return {
         local count = 0
 
         for _, _, slots in params(descriptor) do
-            local count = count + slots
+            count = count + slots
         end
 
         return count
@@ -63,24 +63,44 @@ return {
         return descriptor:byte(-1, -1) == 86 -- 'V'
     end,
 
-    makeParams = function(method, cpool)
-        local name = cpool[method.nameIndex].bytes
-        local descriptor = cpool[method.descriptorIndex].bytes
-        local p, first = {'class'}, 0
-
-        if not method.accessFlags.static then
-            p[#p + 1] = 'l0 --[[this]]'
-            first = 1
-        end
+    makeParams = function(descriptor, isStatic)
+        local p = {'class'}
+        local count = isStatic and 0 or 1
 
         for _, _, slots in params(descriptor) do
-            for i = 1, slots do
-                p[#p + 1] = string.format('l%u', first)
-                first = first + 1
-            end
+            count = count + slots
         end
 
-        return table.concat(p, ', ')
+        for i = 1, count do
+            p[i + 1] = string.format('l%u', i - 1)
+        end
+
+        return p
+    end,
+
+    makeLocals = function(descriptor, isStatic, maxLocals)
+        local p = {}
+        local count = isStatic and 0 or 1
+
+        for _, _, slots in params(descriptor) do
+            count = count + slots
+        end
+
+        for i = count, maxLocals - 1 do
+            p[#p + 1] = string.format('l%u', #p)
+        end
+
+        return p
+    end,
+
+    makeStack = function(maxStack)
+        local p = {}
+
+        for i = 1, maxStack do
+            p[i] = string.format('s%u', i - 1)
+        end
+
+        return p
     end,
 
     parseManifest = function(buffer)
