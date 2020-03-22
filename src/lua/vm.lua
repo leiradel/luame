@@ -8,17 +8,11 @@ local format = string.format
 
 return function(jar)
     local cache = {}
+    local strings = {}
 
     return {
         load = function(self, className)
             log.info('Loading class ', className)
-            local class = cache[className]
-
-            if class then
-                log.info('Class ', className, ' found in cache')
-                return class
-            end
-
             local path = format('%s.class', className)
             local buffer
 
@@ -32,11 +26,7 @@ return function(jar)
                 error(string.format('could not find file "%s"', path))
             end
             
-            class = loader(buffer)
-
-            log.info('Adding class ', className, ' to the cache')
-            cache[className] = class
-            return class
+            return loader(buffer)
         end,
 
         parseManifest = function(self)
@@ -45,7 +35,62 @@ return function(jar)
         end,
 
         luafy = function(self, class)
-            return luafy(self, class)
+            local cpool = class.constantPool
+            local className = cpool[cpool[class.thisClass].nameIndex].bytes
+
+            log.info('Translating ', className, ' to Lua source code')
+            local source = luafy(self, class)
+
+            log.info('Parsing Lua source code for ', className)
+            local defFunc, err = load(source, className .. '.lua', 't')
+
+            if not defFunc then
+                log.error('Error in Lua source code for ', className, ': ', err)
+                error(err)
+            end
+
+            log.info('Running defining Lua function for ', className)
+            local creator = defFunc()
+
+            log.info('Running creator for ', className)
+            return creator(self)
+        end,
+
+        define = function(self, className)
+            log.info('Defining class ', className)
+            local class = cache[className]
+
+            if class then
+                log.info('Class ', className, ' found in cache')
+                return class
+            end
+
+            class = self:load(className)
+            class = self:luafy(class)
+
+            log.info('Adding class ', className, ' to the cache')
+            cache[className] = class
+            return class
+        end,
+
+        string = function(self, str)
+            local instance = strings[str]
+
+            if instance then
+                return instance
+            end
+
+            local stringClass = self:define('java/lang/String')
+            instance = self:new(stringClass, '<init>(I)V', str)
+            strings[str] = instance
+            return instance
+        end,
+
+        new = function(self, class, constructor, ...)
+            local instance = {}
+            class['<new>()V'](instance)
+            class[constructor](instance, ...)
+            return instance
         end
     }
 end
