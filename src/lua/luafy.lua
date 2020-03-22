@@ -3,26 +3,15 @@ local bytecode = require 'luame.bytecode'
 local crc32 = require 'luame.crc32'
 local log = require 'luame.log'
 
-local function dump(str)
-    local hex = {}
-
-    for i = 1, #str do
-        hex[#hex + 1] = string.format('%02x', str:byte(i, i))
-    end
-
-    return string.format('-- %s', table.concat(hex, ' '))
-end
-
 local f = string.format
 local r = string.rep
 
-local function q(str)
-    return f('%q', str)
-end
-
-local function h(x, d)
-    local fmt = f('%%0%ux', d or 4)
-    return f(fmt, x)
+local function i(str)
+    if str:match('^[a-zA-Z_][a-zA-Z_0-9]*$') then
+        return f('.%s', str)
+    else
+        return f('[%q]', str)
+    end
 end
 
 local function collectJumps(method, cpool)
@@ -47,7 +36,7 @@ local function collectJumps(method, cpool)
             jumps[#jumps + 1] = {source = pc, target = target, sp = sp, jsr = name == 'jsr'}
         elseif name == 'goto_w' or name == 'jsr_w' then
             local target = pc + b:read 'I'
-            jumps[#jumps + 1] = {source = pc, target = target, sp = sp, jsr = name == 'jsr'}
+            jumps[#jumps + 1] = {source = pc, target = target, sp = sp, jsr = name == 'jsr_w'}
         elseif name == 'lookupswitch' then
             local pc = b:tell() - 1
             b:seek((pc + 1 + 3) & ~3, 'set')
@@ -89,643 +78,874 @@ local function collectJumps(method, cpool)
     return jumps
 end
 
-local function invoke(lua, cpool, index, static, sp)
+local function binop(code, sp, operator)
+    code:println('s%u = %s(s%u, s%u)', sp - 2, operator, sp - 1, sp - 1)
+    return -1
+end
+
+local function binop2(code, sp, operator)
+    code:println('s%u = %s(s%u, s%u)', sp - 4, operator, sp - 2, sp - 2)
+    return -2
+end
+
+local function generateIf(code, sp, b, operator, setnil)
+    local pc = b:tell() - 1
+    local offset = b:read 's'
+
+    if setnil then
+        code:println 'do'
+        code:println('    local test1, test2 = s%u, s%u', sp - 2, sp - 1)
+        code:println('    s%u, s%u = nil, nil', sp - 1, sp - 2)
+        code:println('    if test1 %s test2 then goto _%04x', operator, pc + offset)
+        code:println 'end'
+    else
+        code:println('if s%u %s s%u then goto _%04x', sp - 2, operator, sp - 1, pc + offset)
+    end
+
+    return -2
+end
+
+local function generateIf0(code, sp, b, operator)
+    local pc = b:tell() - 1
+    local offset = b:read 's'
+    code:println('if s%u %s 0 then goto _%04x', sp - 1, operator, pc + offset)
+    return -1
+end
+
+local function generateInvoke(code, imports, sp, b, class, index, static)
+    local cpool = class.constantPool
     local methodref = cpool[index]
     local className = cpool[cpool[methodref.classIndex].nameIndex].bytes
     local nameAndType = cpool[methodref.nameAndTypeIndex]
     local name = cpool[nameAndType.nameIndex].bytes
     local descriptor = cpool[nameAndType.descriptorIndex].bytes
 
-    lua.scratch.imports[className] = true
+    imports[className] = true
 
-    local params = {}
     local slots = utils.countSlots(descriptor)
 
     if not static then
         slots = slots + 1
     end
 
-    for i = -slots, -1 do
-        params[#params + 1] = f('s%u', sp + i)
-    end
-
-    lua:indentation()
+    code:println('-- %s.%s%s', className, name, descriptor)
+    code:indentation()
 
     if not utils.isVoid(descriptor) then
-        lua:write('s', sp - slots, ' = ')
+        code:write('s%u = ', sp - slots)
     end
 
-    lua:write('_', h(crc32(className), 8), '[', q(name .. descriptor), '](', table.concat(params, ', '), ') -- ', className)
-    lua:eol()
+    code:write('_%08x%s(', crc32(className), i(name .. descriptor))
+    local comma = ''
+
+    for i = -slots, -1 do
+        code:write('%ss%u', comma, sp + i)
+        comma = ', '
+    end
+
+    code:write(')')
+    code:eol()
+
+    if not static then
+        if utils.isVoid(descriptor) then
+            code:println('s%u = nil', sp - slots)
+        end
+
+        slots = slots - 1
+    end
+
+    for _, descriptor, s in utils.params(descriptor) do
+        if descriptor:byte(1, 1) == 76 then -- L
+            code:println('s%u = nil', sp - slots)
+        end
+
+        slots = slots - s
+    end
 end
 
 local generators = {
-    [0x00] = function(vm, lua, class, sp, b)
+    -- 00 nop
+    [0] = function(code, imports, sp, b, class)
+        return 0
     end,
-    [0x01] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = nil')
+    -- 01 aconst_null
+    function(code, imports, sp, b, class)
+        code:println('s%u = nil', sp)
     end,
-    [0x02] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = -1')
+    -- 02 iconst_m1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(-1)', sp)
     end,
-    [0x03] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 0')
+    -- 03 iconst_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(0)', sp)
     end,
-    [0x04] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 1')
+    -- 04 iconst_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(1)', sp)
     end,
-    [0x05] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 2')
+    -- 05 iconst_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(2)', sp)
     end,
-    [0x06] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 3')
+    -- 06 iconst_3
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(3)', sp)
     end,
-    [0x07] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 4')
+    -- 07 iconst_4
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(4)', sp)
     end,
-    [0x08] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 5')
+    -- 08 iconst_5
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(5)', sp)
     end,
-    [0x09] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 0')
+    -- 09 lconst_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = 0', sp)
     end,
-    [0x0a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 1')
+    -- 0a lconst_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = 1', sp)
     end,
-    [0x0b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 0')
+    -- 0b fconst_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2f(0)', sp)
     end,
-    [0x0c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 1')
+    -- 0c fconst_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2f(1)', sp)
     end,
-    [0x0d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 2')
+    -- 0d fconst_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2f(2)', sp)
     end,
-    [0x0e] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 0')
+    -- 0e dconst_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2d(0)', sp)
     end,
-    [0x0f] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = 1')
+    -- 0f dconst_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2d(1)', sp)
     end,
-    [0x10] = function(vm, lua, class, sp, b)
-        local byte = b:read 'B'
-        lua:println('s', sp, ' = byteToInt(', byte, ')')
+    -- 10 bipush
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(%d)', sp, b:read 'B')
     end,
-    [0x11] = function(vm, lua, class, sp, b)
-        local short = b:read 's'
-        lua:println('s', sp, ' = shortToInt(', short, ')')
+    -- 11 sipush
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(%d)', sp, b:read 's')
     end,
-    [0x12] = function(vm, lua, class, sp, b)
-        local constant = class.constantPool[b:read '1']
-        local value = constant.bytes
+    -- 12 ldc
+    function(code, imports, sp, b, class)
+        local cpool = class.constantPool
+        local const = cpool[b:read '1']
+        local value = const.bytes
 
-        if constant.tag == 'string' then
-            value = q(class.constantPool[constant.stringIndex].bytes)
+        if const.tag == 'string' then
+            value = cpool[const.stringIndex].bytes
+            imports[value] = 'string'
+            code:println('s%u = _%08x -- %q', sp, crc32(value), value)
+        elseif const.tag == 'int' then
+            code:println('s%u = l2i(%d)', sp, value)
+        else
+            code:println('s%u = l2f(%d)', sp, value)
         end
-
-        lua:println('s', sp, ' = ', value)
     end,
-    [0x13] = function(vm, lua, class, sp, b)
-        local constant = class.constantPool[b:read '2']
-        local value = constant.bytes
+    -- 13 ldc_w
+    function(code, imports, sp, b, class)
+        local cpool = class.constantPool
+        local const = cpool[b:read '2']
+        local value = const.bytes
 
-        if constant.tag == 'string' then
-            value = q(class.constantPool[constant.stringIndex].bytes)
+        if const.tag == 'string' then
+            value = cpool[const.stringIndex].bytes
+            imports[value] = 'string'
+            code:println('s%u = _%08x -- %q', sp, crc32(value), value)
+        elseif const.tag == 'int' then
+            code:println('s%u = l2i(%d)', sp, value)
+        else
+            code:println('s%u = l2f(%d)', sp, value)
         end
+    end,
+    -- 14 ldc2_w
+    function(code, imports, sp, b, class)
+        local const = class.constantPool[b:read '2']
+        local value = const.bytes
 
-        lua:println('s', sp, ' = ', value)
-    end,
-    [0x14] = function(vm, lua, class, sp, b)
-        local constant = class.constantPool[b:read '2']
-        local value = constant.bytes
-        lua:println('s', sp, ' = ', value)
-    end,
-    [0x15] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l', b:read '1')
-    end,
-    [0x16] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l', b:read '1')
-    end,
-    [0x17] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l', b:read '1')
-    end,
-    [0x18] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l', b:read '1')
-    end,
-    [0x19] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l', b:read '1')
-    end,
-    [0x1a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l0')
-    end,
-    [0x1b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l1')
-    end,
-    [0x1c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l2')
-    end,
-    [0x1d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l3')
-    end,
-    [0x1e] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l0')
-    end,
-    [0x1f] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l1')
-    end,
-    [0x20] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l2')
-    end,
-    [0x21] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l3')
-    end,
-    [0x22] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l0')
-    end,
-    [0x23] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l1')
-    end,
-    [0x24] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l2')
-    end,
-    [0x25] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l3')
-    end,
-    [0x26] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l0')
-    end,
-    [0x27] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l1')
-    end,
-    [0x28] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l2')
-    end,
-    [0x29] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l3')
-    end,
-    [0x2a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l0')
-    end,
-    [0x2b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l1')
-    end,
-    [0x2c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l2')
-    end,
-    [0x2d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = l3')
-    end,
-    [0x2e] = function(vm, lua, class, sp, b)
-        lua:println('throwNullPointerException(s', sp - 2, ')')
-        lua:println('throwArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = s', sp - 2, '[s', sp - 1, ']')
-    end,
-    [0x2f] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = s', sp - 2, '[s', sp - 1, ']')
-    end,
-    [0x30] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = s', sp - 2, '[s', sp - 1, ']')
-    end,
-    [0x31] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = s', sp - 2, '[s', sp - 1, ']')
-    end,
-    [0x32] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = s', sp - 2, '[s', sp - 1, ']')
-    end,
-    [0x33] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = byteToInt(s', sp - 2, '[s', sp - 1, '])')
-    end,
-    [0x34] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = charToInt(s', sp - 2, '[s', sp - 1, '])')
-    end,
-    [0x35] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 2, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 2, ', s', sp - 1, ')')
-        lua:println('s', sp - 2, ' = shortToInt(s', sp - 2, '[s', sp - 1, '])')
-    end,
-    [0x36] = function(vm, lua, class, sp, b)
-        lua:println('l', b:read '1', ' = s', sp - 1)
-    end,
-    [0x37] = function(vm, lua, class, sp, b)
-        lua:println('l', b:read '1', ' = s', sp - 1)
-    end,
-    [0x38] = function(vm, lua, class, sp, b)
-        lua:println('l', b:read '1', ' = s', sp - 1)
-    end,
-    [0x39] = function(vm, lua, class, sp, b)
-        lua:println('l', b:read '1', ' = s', sp - 1)
-    end,
-    [0x3a] = function(vm, lua, class, sp, b)
-        lua:println('l', b:read '1', ' = s', sp - 1)
-    end,
-    [0x3b] = function(vm, lua, class, sp, b)
-        lua:println('l0 = s', sp - 1)
-    end,
-    [0x3c] = function(vm, lua, class, sp, b)
-        lua:println('l1 = s', sp - 1)
-    end,
-    [0x3d] = function(vm, lua, class, sp, b)
-        lua:println('l2 = s', sp - 1)
-    end,
-    [0x3e] = function(vm, lua, class, sp, b)
-        lua:println('l3 = s', sp - 1)
-    end,
-    [0x3f] = function(vm, lua, class, sp, b)
-        lua:println('l0 = s', sp - 1)
-    end,
-    [0x40] = function(vm, lua, class, sp, b)
-        lua:println('l1 = s', sp - 1)
-    end,
-    [0x41] = function(vm, lua, class, sp, b)
-        lua:println('l2 = s', sp - 1)
-    end,
-    [0x42] = function(vm, lua, class, sp, b)
-        lua:println('l3 = s', sp - 1)
-    end,
-    [0x43] = function(vm, lua, class, sp, b)
-        lua:println('l0 = s', sp - 1)
-    end,
-    [0x44] = function(vm, lua, class, sp, b)
-        lua:println('l1 = s', sp - 1)
-    end,
-    [0x45] = function(vm, lua, class, sp, b)
-        lua:println('l2 = s', sp - 1)
-    end,
-    [0x46] = function(vm, lua, class, sp, b)
-        lua:println('l3 = s', sp - 1)
-    end,
-    [0x47] = function(vm, lua, class, sp, b)
-        lua:println('l0 = s', sp - 1)
-    end,
-    [0x48] = function(vm, lua, class, sp, b)
-        lua:println('l1 = s', sp - 1)
-    end,
-    [0x49] = function(vm, lua, class, sp, b)
-        lua:println('l2 = s', sp - 1)
-    end,
-    [0x4a] = function(vm, lua, class, sp, b)
-        lua:println('l3 = s', sp - 1)
-    end,
-    [0x4b] = function(vm, lua, class, sp, b)
-        lua:println('l0 = s', sp - 1)
-    end,
-    [0x4c] = function(vm, lua, class, sp, b)
-        lua:println('l1 = s', sp - 1)
-    end,
-    [0x4d] = function(vm, lua, class, sp, b)
-        lua:println('l2 = s', sp - 1)
-    end,
-    [0x4e] = function(vm, lua, class, sp, b)
-        lua:println('l3 = s', sp - 1)
-    end,
-    [0x4f] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = s', sp - 1)
-    end,
-    [0x50] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = s', sp - 1)
-    end,
-    [0x51] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = s', sp - 1)
-    end,
-    [0x52] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = s', sp - 1)
-    end,
-    [0x53] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = s', sp - 1)
-    end,
-    [0x54] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = intToByte(s', sp - 1, ')')
-    end,
-    [0x55] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = intToChar(s', sp - 1, ')')
-    end,
-    [0x56] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 3, ')')
-        lua:println('maybeThrowArrayIndexOutOfBoundsException(s', sp - 3, ', s', sp - 2, ')')
-        lua:println('s', sp - 3, '[s', sp - 2, '] = intToShort(s', sp - 1, ')')
-    end,
-    [0x57] = function(vm, lua, class, sp, b)
-    end,
-    [0x59] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = s', sp - 1)
-    end,
-    [0x5a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = s', sp - 1)
-        lua:println('s', sp - 1, ' = s', sp - 2)
-        lua:println('s', sp - 2, ' = s', sp)
-    end,
-    [0x5b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp, ' = s', sp - 1)
-        lua:println('s', sp - 1, ' = s', sp - 2)
-        lua:println('s', sp - 2, ' = s', sp - 3)
-        lua:println('s', sp - 3, ' = s', sp)
-    end,
-    [0x5c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp + 1, ' = s', sp - 1)
-        lua:println('s', sp, ' = s', sp - 2)
-    end,
-    [0x5d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp + 1, ' = s', sp - 1)
-        lua:println('s', sp + 0, ' = s', sp - 2)
-        lua:println('s', sp - 1, ' = s', sp - 3)
-        lua:println('s', sp - 2, ' = s', sp + 1)
-        lua:println('s', sp - 3, ' = s', sp + 0)
-    end,
-    [0x5e] = function(vm, lua, class, sp, b)
-        lua:println('s', sp + 1, ' = s', sp - 1)
-        lua:println('s', sp + 0, ' = s', sp - 2)
-        lua:println('s', sp - 1, ' = s', sp - 3)
-        lua:println('s', sp - 2, ' = s', sp - 4)
-        lua:println('s', sp - 3, ' = s', sp + 1)
-        lua:println('s', sp - 4, ' = s', sp + 0)
-    end,
-    [0x5f] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ', s', sp - 2, ' = s', sp - 2, ', s', sp - 1)
-    end,
-    [0x60] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-    end,
-    [0x61] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-    end,
-    [0x62] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-    end,
-    [0x63] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' + s', sp - 1)
-    end,
-    [0x64] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-    end,
-    [0x65] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-    end,
-    [0x66] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-    end,
-    [0x67] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' - s', sp - 1)
-    end,
-    [0x68] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-    end,
-    [0x69] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-    end,
-    [0x6a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-    end,
-    [0x6b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' * s', sp - 1)
-    end,
-    [0x6c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' // s', sp - 1)
-    end,
-    [0x6d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' // s', sp - 1)
-    end,
-    [0x6e] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' / s', sp - 1)
-    end,
-    [0x6f] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' / s', sp - 1)
-    end,
-    [0x70] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-    end,
-    [0x71] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-    end,
-    [0x72] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-    end,
-    [0x73] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' % s', sp - 1)
-    end,
-    [0x74] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = -s', sp - 1)
-    end,
-    [0x75] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = -s', sp - 1)
-    end,
-    [0x76] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = -s', sp - 1)
-    end,
-    [0x77] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = -s', sp - 1)
-    end,
-    [0x78] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' << s', sp - 1)
-    end,
-    [0x79] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' << s', sp - 1)
-    end,
-    [0x7a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-    end,
-    [0x7b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-    end,
-    [0x7c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-    end,
-    [0x7d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' >> s', sp - 1)
-    end,
-    [0x7e] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' & s', sp - 1)
-    end,
-    [0x7f] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' & s', sp - 1)
-    end,
-    [0x80] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' | s', sp - 1)
-    end,
-    [0x81] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' | s', sp - 1)
-    end,
-    [0x82] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' ~ s', sp - 1)
-    end,
-    [0x83] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = s', sp - 2, ' ~ s', sp - 1)
-    end,
-    [0x84] = function(vm, lua, class, sp, b)
+        if const.tag == 'long' then
+            code:println('s%u = %d', sp, value)
+        else
+            code:println('s%u = l2d(%d)', sp, value)
+        end
+    end,
+    -- 15 iload
+    function(code, imports, sp, b, class)
+        code:println('s%u = l%u', sp, b:read '1')
+    end,
+    -- 16 lload
+    function(code, imports, sp, b, class)
+        code:println('s%u = l%u', sp, b:read '1')
+    end,
+    -- 17 fload
+    function(code, imports, sp, b, class)
+        code:println('s%u = l%u', sp, b:read '1')
+    end,
+    -- 18 dload
+    function(code, imports, sp, b, class)
+        code:println('s%u = l%u', sp, b:read '1')
+    end,
+    -- 19 aload
+    function(code, imports, sp, b, class)
+        code:println('s%u = l%u', sp, b:read '1')
+    end,
+    -- 1a iload_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l0', sp)
+    end,
+    -- 1b iload_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l1', sp)
+    end,
+    -- 1c iload_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2', sp)
+    end,
+    -- 1d iload_3
+    function(code, imports, sp, b, class)
+        code:println('s%u = l3', sp)
+    end,
+    -- 1e lload_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l0', sp)
+    end,
+    -- 1f lload_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l1', sp)
+    end,
+    -- 20 lload_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2', sp)
+    end,
+    -- 21 lload_3
+    function(code, imports, sp, b, class)
+        code:println('s%u = l3', sp)
+    end,
+    -- 22 fload_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l0', sp)
+    end,
+    -- 23 fload_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l1', sp)
+    end,
+    -- 24 fload_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2', sp)
+    end,
+    -- 25 fload_3
+    function(code, imports, sp, b, class)
+        code:println('s%u = l3', sp)
+    end,
+    -- 26 dload_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l0', sp)
+    end,
+    -- 27 dload_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l1', sp)
+    end,
+    -- 28 dload_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2', sp)
+    end,
+    -- 29 dload_3
+    function(code, imports, sp, b, class)
+        code:println('s%u = l3', sp)
+    end,
+    -- 2a aload_0
+    function(code, imports, sp, b, class)
+        code:println('s%u = l0', sp)
+    end,
+    -- 2b aload_1
+    function(code, imports, sp, b, class)
+        code:println('s%u = l1', sp)
+    end,
+    -- 2c aload_2
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2', sp)
+    end,
+    -- 2d aload_3
+    function(code, imports, sp, b, class)
+        code:println('s%u = l3', sp)
+    end,
+    -- 2e iaload
+    function(code, imports, sp, b, class)
+        code:println('throwNullPointerException(s%u)', sp - 2)
+        code:println('throwArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 2f laload
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 2)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 30 faload
+    function(code, imports, sp, b, class)
+        code:println('throwNullPointerException(s%u)', sp - 2)
+        code:println('throwArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 31 daload
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 2)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 32 aaload
+    function(code, imports, sp, b, class)
+        code:println('throwNullPointerException(s%u)', sp - 2)
+        code:println('throwArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 33 baload
+    function(code, imports, sp, b, class)
+        code:println('throwNullPointerException(s%u)', sp - 2)
+        code:println('throwArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 34 caload
+    function(code, imports, sp, b, class)
+        code:println('throwNullPointerException(s%u)', sp - 2)
+        code:println('throwArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 35 saload
+    function(code, imports, sp, b, class)
+        code:println('throwNullPointerException(s%u)', sp - 2)
+        code:println('throwArrayIndexOutOfBoundsException(s%u, s%u)', sp - 2, sp - 1)
+        code:println('s%u = s%u[s%u]', sp - 2, sp - 2, sp - 1)
+    end,
+    -- 36 istore
+    function(code, imports, sp, b, class)
+        code:println('l%u = s%u', b:read '1', sp - 1)
+    end,
+    -- 37 lstore
+    function(code, imports, sp, b, class)
+        code:println('l%u = s%u', b:read '1', sp - 2)
+    end,
+    -- 38 fstore
+    function(code, imports, sp, b, class)
+        code:println('l%u = s%u', b:read '1', sp - 1)
+    end,
+    -- 39 dstore
+    function(code, imports, sp, b, class)
+        code:println('l%u = s%u', b:read '1', sp - 2)
+    end,
+    -- 3a astore
+    function(code, imports, sp, b, class)
+        code:println('l', b:read '1', ' = s', sp - 1)
+        code:println('s%u = nil', sp - 1)
+    end,
+    -- 3b istore_0
+    function(code, imports, sp, b, class)
+        code:println('l0 = s%u', sp - 1)
+    end,
+    -- 3c istore_1
+    function(code, imports, sp, b, class)
+        code:println('l1 = s%u', sp - 1)
+    end,
+    -- 3d istore_2
+    function(code, imports, sp, b, class)
+        code:println('l2 = s%u', sp - 1)
+    end,
+    -- 3e istore_3
+    function(code, imports, sp, b, class)
+        code:println('l3 = s%u', sp - 1)
+    end,
+    -- 3f lstore_0
+    function(code, imports, sp, b, class)
+        code:println('l0 = s%u', sp - 1)
+    end,
+    -- 40 lstore_1
+    function(code, imports, sp, b, class)
+        code:println('l1 = s%u', sp - 1)
+    end,
+    -- 41 lstore_2
+    function(code, imports, sp, b, class)
+        code:println('l2 = s%u', sp - 1)
+    end,
+    -- 42 lstore_3
+    function(code, imports, sp, b, class)
+        code:println('l3 = s%u', sp - 1)
+    end,
+    -- 43 fstore_0
+    function(code, imports, sp, b, class)
+        code:println('l0 = s%u', sp - 1)
+    end,
+    -- 44 fstore_1
+    function(code, imports, sp, b, class)
+        code:println('l1 = s%u', sp - 1)
+    end,
+    -- 45 fstore_2
+    function(code, imports, sp, b, class)
+        code:println('l2 = s%u', sp - 1)
+    end,
+    -- 46 fstore_3
+    function(code, imports, sp, b, class)
+        code:println('l3 = s%u', sp - 1)
+    end,
+    -- 47 dstore_0
+    function(code, imports, sp, b, class)
+        code:println('l0 = s%u', sp - 1)
+    end,
+    -- 48 dstore_1
+    function(code, imports, sp, b, class)
+        code:println('l1 = s%u', sp - 1)
+    end,
+    -- 49 dstore_2
+    function(code, imports, sp, b, class)
+        code:println('l2 = s%u', sp - 1)
+    end,
+    -- 4a dstore_3
+    function(code, imports, sp, b, class)
+        code:println('l3 = s%u', sp - 1)
+    end,
+    -- 4b astore_0
+    function(code, imports, sp, b, class)
+        code:println('l0 = s%u', sp - 1)
+        code:println('s%u = nil', sp - 1)
+    end,
+    -- 4c astore_1
+    function(code, imports, sp, b, class)
+        code:println('l1 = s%u', sp - 1)
+        code:println('s%u = nil', sp - 1)
+    end,
+    -- 4d astore_2
+    function(code, imports, sp, b, class)
+        code:println('l2 = s%u', sp - 1)
+        code:println('s%u = nil', sp - 1)
+    end,
+    -- 4e astore_3
+    function(code, imports, sp, b, class)
+        code:println('l3 = s%u', sp - 1)
+        code:println('s%u = nil', sp - 1)
+    end,
+    -- 4f iastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 3)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 3, sp - 2)
+        code:println('s%u[s%u] = s%u', sp - 3, sp - 2, sp - 1)
+        code:println('s%u = nil', sp - 3)
+    end,
+    -- 50 lastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 4)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 4, sp - 3)
+        code:println('s%u[s%u] = s%u', sp - 4, sp - 3, sp - 2)
+        code:println('s%u = nil', sp - 4)
+    end,
+    -- 51 fastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 3)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 3, sp - 2)
+        code:println('s%u[s%u] = s%u', sp - 3, sp - 2, sp - 1)
+        code:println('s%u = nil', sp - 3)
+    end,
+    -- 52 dastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 4)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 4, sp - 3)
+        code:println('s%u[s%u] = s%u', sp - 4, sp - 3, sp - 2)
+        code:println('s%u = nil', sp - 4)
+    end,
+    -- 53 aastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 3)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 3, sp - 2)
+        code:println('s%u[s%u] = s%u', sp - 3, sp - 2, sp - 1)
+        code:println('s%u = nil', sp - 1)
+        code:println('s%u = nil', sp - 3)
+    end,
+    -- 54 bastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 3)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 3, sp - 2)
+        code:println('s%u[s%u] = s%u', sp - 3, sp - 2, sp - 1)
+        code:println('s%u = nil', sp - 3)
+    end,
+    -- 55 castore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 3)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 3, sp - 2)
+        code:println('s%u[s%u] = s%u', sp - 3, sp - 2, sp - 1)
+        code:println('s%u = nil', sp - 3)
+    end,
+    -- 56 sastore
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 3)
+        code:println('maybeThrowArrayIndexOutOfBoundsException(s%u, s%u)', sp - 3, sp - 2)
+        code:println('s%u[s%u] = s%u', sp - 3, sp - 2, sp - 1)
+        code:println('s%u = nil', sp - 3)
+    end,
+    -- 57 pop
+    function(code, imports, sp, b, class)
+        code:println('s%u = nil', sp - 1)
+    end,
+    -- 58 pop2
+    function(code, imports, sp, b, class)
+        code:println('s%u = nil', sp - 1)
+        code:println('s%u = nil', sp - 2)
+    end,
+    -- 59 dup
+    function(code, imports, sp, b, class)
+        code:println('s%u = s%u', sp, sp - 1)
+    end,
+    -- 5a dup_x1
+    function(code, imports, sp, b, class)
+        code:println('s%u = s%u', sp,     sp - 1)
+        code:println('s%u = s%u', sp - 1, sp - 2)
+        code:println('s%u = s%u', sp - 2, sp)
+    end,
+    -- 5b dup_x2
+    function(code, imports, sp, b, class)
+        code:println('s%u = s%u', sp,     sp - 1)
+        code:println('s%u = s%u', sp - 1, sp - 2)
+        code:println('s%u = s%u', sp - 2, sp - 3)
+        code:println('s%u = s%u', sp - 3, sp)
+    end,
+    -- 5c dup2
+    function(code, imports, sp, b, class)
+        code:println('s%u = s%u', sp + 1, sp - 1)
+        code:println('s%u = s%u', sp,     sp - 2)
+    end,
+    -- 5d dup2_x1
+    function(code, imports, sp, b, class)
+        code:println('s%u = s%u', sp + 1, sp - 1)
+        code:println('s%u = s%u', sp,     sp - 2)
+        code:println('s%u = s%u', sp - 1, sp - 3)
+        code:println('s%u = s%u', sp - 2, sp + 1)
+        code:println('s%u = s%u', sp - 3, sp)
+    end,
+    -- 5e dup2_x2
+    function(code, imports, sp, b, class)
+        code:println('s%u = s%u', sp + 1, sp - 1)
+        code:println('s%u = s%u', sp,     sp - 2)
+        code:println('s%u = s%u', sp - 1, sp - 3)
+        code:println('s%u = s%u', sp - 2, sp - 4)
+        code:println('s%u = s%u', sp - 3, sp + 1)
+        code:println('s%u = s%u', sp - 4, sp)
+    end,
+    -- 5f swap
+    function(code, imports, sp, b, class)
+        code:println('s%u, s%u = s%u, s%u', sp - 1, sp - 2, sp - 2, sp - 1)
+    end,
+    -- 60 iadd
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'iadd')
+    end,
+    -- 61 ladd
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'ladd')
+    end,
+    -- 62 fadd
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'fadd')
+    end,
+    -- 63 dadd
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'dadd')
+    end,
+    -- 64 isub
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'isub')
+    end,
+    -- 65 lsub
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lsub')
+    end,
+    -- 66 fsub
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'fsub')
+    end,
+    -- 67 dsub
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'dsub')
+    end,
+    -- 68 imul
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'imul')
+    end,
+    -- 69 lmul
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lmul')
+    end,
+    -- 6a fmul
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'fmul')
+    end,
+    -- 6b dmul
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'dmul')
+    end,
+    -- 6c idiv
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'idiv')
+    end,
+    -- 6d ldiv
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'ldiv')
+    end,
+    -- 6e fdiv
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'fdiv')
+    end,
+    -- 6f ddiv
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'ddiv')
+    end,
+    -- 70 irem
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'irem')
+    end,
+    -- 71 lrem
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lrem')
+    end,
+    -- 72 frem
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'frem')
+    end,
+    -- 73 drem
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'drem')
+    end,
+    -- 74 ineg
+    function(code, imports, sp, b, class)
+        code:println('s%u = ineg(s%u)', sp - 1, sp - 1)
+    end,
+    -- 75 lneg
+    function(code, imports, sp, b, class)
+        code:println('s%u = lneg(s%u)', sp - 2, sp - 2)
+    end,
+    -- 76 fneg
+    function(code, imports, sp, b, class)
+        code:println('s%u = fneg(s%u)', sp - 1, sp - 1)
+    end,
+    -- 77 dneg
+    function(code, imports, sp, b, class)
+        code:println('s%u = dneg(s%u)', sp - 2, sp - 2)
+    end,
+    -- 78 ishl
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'ishl')
+    end,
+    -- 79 lshl
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lshl')
+    end,
+    -- 7a ishr
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'ishr')
+    end,
+    -- 7b lshr
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lshr')
+    end,
+    -- 7c iushr
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'iushr')
+    end,
+    -- 7d lushr
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lushr')
+    end,
+    -- 7e iand
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'iand')
+    end,
+    -- 7f land
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'land')
+    end,
+    -- 80 ior
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'ior')
+    end,
+    -- 81 lor
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lor')
+    end,
+    -- 82 ixor
+    function(code, imports, sp, b, class)
+        binop(code, sp, 'ixor')
+    end,
+    -- 83 lxor
+    function(code, imports, sp, b, class)
+        binop2(code, sp, 'lxor')
+    end,
+    -- 84 iinc
+    function(code, imports, sp, b, class)
         local index = b:read('1')
         local const = b:read('B')
-        lua:println('l', index, ' = l', index, ' + ', const)
+        code:println('l%u = iadd(l%u, %d)', index, index, const)
     end,
-    [0x85] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = intToLong(s', sp - 1, ')')
+    -- 85 i2l
+    function(code, imports, sp, b, class)
+        code:println('s%u = i2l(s%u)', sp - 1, sp - 1)
     end,
-    [0x86] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = intToFloar(s', sp - 1, ')')
+    -- 86 i2f
+    function(code, imports, sp, b, class)
+        code:println('s%u = i2f(s%u)', sp - 1, sp - 1)
     end,
-    [0x87] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = intToDouble(s', sp - 1, ')')
+    -- 87 i2d
+    function(code, imports, sp, b, class)
+        code:println('s%u = i2d(s%u)', sp - 1, sp - 1)
     end,
-    [0x88] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = longToInt(s', sp - 1, ')')
+    -- 88 l2i
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2i(s%u)', sp - 2, sp - 2)
     end,
-    [0x89] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = longToFloat(s', sp - 1, ')')
+    -- 89 l2f
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2f(s%u)', sp - 2, sp - 2)
     end,
-    [0x8a] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = longToDouble(s', sp - 1, ')')
+    -- 8a l2d
+    function(code, imports, sp, b, class)
+        code:println('s%u = l2d(s%u)', sp - 2, sp - 2)
     end,
-    [0x8b] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = floatToInt(s', sp - 1, ')')
+    -- 8b f2i
+    function(code, imports, sp, b, class)
+        code:println('s%u = f2i(s%u)', sp - 1, sp - 1)
     end,
-    [0x8c] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = floatToLong(s', sp - 1, ')')
+    -- 8c f2l
+    function(code, imports, sp, b, class)
+        code:println('s%u = f2l(s%u)', sp - 1, sp - 1)
     end,
-    [0x8d] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = floatToDouble(s', sp - 1, ')')
+    -- 8d f2d
+    function(code, imports, sp, b, class)
+        code:println('s%u = f2d(s%u)', sp - 1, sp - 1)
     end,
-    [0x8e] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = doubleToInt(s', sp - 1, ')')
+    -- 8e d2i
+    function(code, imports, sp, b, class)
+        code:println('s%u = d2i(s%u)', sp - 2, sp - 2)
     end,
-    [0x8f] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = doubleToLong(s', sp - 1, ')')
+    -- 8f d2l
+    function(code, imports, sp, b, class)
+        code:println('s%u = d2l(s%u)', sp - 2, sp - 2)
     end,
-    [0x90] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = doubleToFloat(s', sp - 1, ')')
+    -- 90 d2f
+    function(code, imports, sp, b, class)
+        code:println('s%u = d2f(s%u)', sp - 2, sp - 2)
     end,
-    [0x91] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = intToByte(s', sp - 1, ')')
+    -- 91 i2b
+    function(code, imports, sp, b, class)
+        code:println('s%u = i2b(s%u)', sp - 1, sp - 1)
     end,
-    [0x92] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = intToChar(s', sp - 1, ')')
+    -- 92 i2c
+    function(code, imports, sp, b, class)
+        code:println('s%u = i2c(s%u)', sp - 1, sp - 1)
     end,
-    [0x93] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 1, ' = intToShort(s', sp - 1, ')')
+    -- 93 i2s
+    function(code, imports, sp, b, class)
+        code:println('s%u = i2s(s%u)', sp - 1, sp - 1)
     end,
-    [0x94] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = longCompare(s', sp - 2, ', s', sp - 1, ')')
+    -- 94 lcmp
+    function(code, imports, sp, b, class)
+        code:println('s%u = lcmp(s%u, s%u)', sp - 4, sp - 4, sp - 2)
     end,
-    [0x95] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = floatCompareLess(s', sp - 2, ', s', sp - 1, ')')
+    -- 95 fcmpl
+    function(code, imports, sp, b, class)
+        code:println('s%u = fcmpl(s%u, s%u)', sp - 2, sp - 2, sp - 1)
     end,
-    [0x96] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = floatCompareGreater(s', sp - 2, ', s', sp - 1, ')')
+    -- 96 fcmpg
+    function(code, imports, sp, b, class)
+        code:println('s%u = fcmpg(s%u, s%u)', sp - 2, sp - 2, sp - 1)
     end,
-    [0x97] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = doubleCompareLess(s', sp - 2, ', s', sp - 1, ')')
+    -- 97 dcmpl
+    function(code, imports, sp, b, class)
+        code:println('s%u = dcmpl(s%u, s%u)', sp - 4, sp - 4, sp - 2)
     end,
-    [0x98] = function(vm, lua, class, sp, b)
-        lua:println('s', sp - 2, ' = doubleCompareGreater(s', sp - 2, ', s', sp - 1, ')')
+    -- 98 dcmpg
+    function(code, imports, sp, b, class)
+        code:println('s%u = dcmpg(s%u, s%u)', sp - 4, sp - 4, sp - 2)
     end,
-    [0x99] = function(vm, lua, class, sp, b)
+    -- 99 ifeq
+    function(code, imports, sp, b, class)
+        generateIf0(code, sp, b, '==')
+    end,
+    -- 9a ifne
+    function(code, imports, sp, b, class)
+        generateIf0(code, sp, b, '~=')
+    end,
+    -- 9b iflt
+    function(code, imports, sp, b, class)
+        generateIf0(code, sp, b, '<')
+    end,
+    -- 9c ifge
+    function(code, imports, sp, b, class)
+        generateIf0(code, sp, b, '>=')
+    end,
+    -- 9d ifgt
+    function(code, imports, sp, b, class)
+        generateIf0(code, sp, b, '>')
+    end,
+    -- 9e ifle
+    function(code, imports, sp, b, class)
+        generateIf0(code, sp, b, '<=')
+    end,
+    -- 9f if_icmpeq
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '==', false)
+    end,
+    -- a0 if_icmpne
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '~=', false)
+    end,
+    -- a1 if_icmplt
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '<', false)
+    end,
+    -- a2 if_icmpge
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '>=', false)
+    end,
+    -- a3 if_icmpgt
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '>', false)
+    end,
+    -- a4 if_icmple
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '<=', false)
+    end,
+    -- a5 if_acmpeq
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '==', true)
+    end,
+    -- a6 if_acmpne
+    function(code, imports, sp, b, class)
+        generateIf(code, sp, b, '~=', true)
+    end,
+    -- a7 goto
+    function(code, imports, sp, b, class)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        lua:println('if s', sp - 1, ' == 0 then goto _', h(pc + offset, 4))
+        code:println('goto _%04x', pc + offset)
     end,
-    [0x9a] = function(vm, lua, class, sp, b)
+    -- a8 jsr
+    function(code, imports, sp, b, class)
         local pc = b:tell() - 1
         local offset = b:read 's'
-        lua:println('if s', sp - 1, ' ~= 0 then goto _', h(pc + offset, 4))
+        code:println('s%u = %u', sp, pc + 3)
+        code:println('goto _%04x', pc + offset)
     end,
-    [0x9b] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 1, ' < 0 then goto _', h(pc + offset, 4))
+    -- a9 ret
+    function(code, imports, sp, b, class)
+        code:println('-- ret l%u', b:read '1')
     end,
-    [0x9c] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 1, ' >= 0 then goto _', h(pc + offset, 4))
-    end,
-    [0x9d] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 1, ' > 0 then goto _', h(pc + offset, 4))
-    end,
-    [0x9e] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 1, ' <= 0 then goto _', h(pc + offset, 4))
-    end,
-    [0x9f] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' == s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa0] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' ~= s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa1] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' < s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa2] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' >= s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa3] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' > s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa4] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' <= s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa5] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' == s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa6] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('if s', sp - 2, ' ~= s', sp - 1, ' then goto _', h(pc + offset, 4))
-    end,
-    [0xa7] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('goto _', h(pc + offset, 4))
-    end,
-    [0xa8] = function(vm, lua, class, sp, b)
-        local pc = b:tell() - 1
-        local offset = b:read 's'
-        lua:println('s', sp, ' = ', pc + 3)
-        lua:println('goto _', h(pc + offset, 4))
-    end,
-    [0xa9] = function(vm, lua, class, sp, b)
-        lua:println(dump(b:read(1)))
-    end,
-    [0xaa] = function(vm, lua, class, sp, b)
+    -- aa tableswitch
+    function(code, imports, sp, b, class)
         -- TODO generate a binary search.
         local pc = b:tell() - 1
         b:seek((pc + 1 + 3) & ~3, 'set')
@@ -734,202 +954,336 @@ local generators = {
         local high = b:read 'I'
         local npairs = high - low + 1
 
-        lua:println 'do'
-        lua:println('local index = s', sp - 1, ' - ', low)
+        code:println 'do'
+        code:println('    local index = s%u - %d', sp - 1, low)
 
-        for i = 1, npairs do
-            local offset = b:read 'I'
-            lua:println(i == 1 and '    if' or '    elseif', ' index == ', i - 1, ' then goto _', h(pc + offset, 4))
-        end
+        if npairs ~= 0 then
+            local cmp = 'if'
 
-        if npairs == 0 then
-            lua:println('    goto _', h(pc + default, 4))
+            for i = 1, npairs do
+                local offset = b:read 'I'
+                code:println('    %s index == %u then goto _%04x', cmp, i - 1, pc + offset)
+                cmp = 'elseif'
+            end
+    
+            code:println('    else goto _%04x', pc + default)
+            code:println '    end'
         else
-            lua:println('    else goto _', h(pc + default, 4))
-            lua:println '    end'
+            code:println('    goto _%04x', pc + default)
         end
 
-        lua:println 'end'
+        code:println 'end'
     end,
-    [0xab] = function(vm, lua, class, sp, b)
+    -- lookupswitch
+    function(code, imports, sp, b, class)
         -- TODO generate a binary search.
         local pc = b:tell() - 1
         b:seek((pc + 1 + 3) & ~3, 'set')
         local default = b:read 'I'
         local npairs = b:read 'I'
 
-        for i = 1, npairs do
-            local match = b:read 'I'
-            local offset = b:read 'I'
-            lua:println(i == 1 and 'if' or 'elseif', ' s', sp - 1, ' == ', match, ' then goto _', h(pc + offset, 4))
-        end
+        if npairs ~= 0 then
+            local cmp = 'if'
 
-        if npairs == 0 then
-            lua:println('goto _', h(pc + default, 4))
+            for i = 1, npairs do
+                local match = b:read 'I'
+                local offset = b:read 'I'
+                code:println('%s s%u == %d then goto _%04x', cmp, sp - 1, match, pc + offset)
+                cmp = 'elseif'
+            end
+
+            code:println('else goto _%04x', pc + default)
+            code:println 'end'
         else
-            lua:println('else goto _', h(pc + default, 4))
-            lua:println('end')
+            code:println('goto _%04x', pc + default)
         end
     end,
-    [0xac] = function(vm, lua, class, sp, b)
-        lua:println('return s', sp - 1)
-        return 0
+    -- ac ireturn
+    function(code, imports, sp, b, class)
+        code:println 'do'
+        code:println('    return s%u', sp - 1)
+        code:println 'end'
     end,
-    [0xad] = function(vm, lua, class, sp, b)
-        lua:println('return s', sp - 1)
-        return 0
+    -- ad lreturn
+    function(code, imports, sp, b, class)
+        code:println 'do'
+        code:println('    return s%u', sp - 1)
+        code:println 'end'
     end,
-    [0xae] = function(vm, lua, class, sp, b)
-        lua:println('return s', sp - 1)
-        return 0
+    -- ae freturn
+    function(code, imports, sp, b, class)
+        code:println 'do'
+        code:println('    return s%u', sp - 1)
+        code:println 'end'
     end,
-    [0xaf] = function(vm, lua, class, sp, b)
-        lua:println('return s', sp - 1)
-        return 0
+    -- af dreturn
+    function(code, imports, sp, b, class)
+        code:println 'do'
+        code:println('    return s%u', sp - 1)
+        code:println 'end'
     end,
-    [0xb0] = function(vm, lua, class, sp, b)
-        lua:println('return s', sp - 1)
-        return 0
+    -- b0 areturn
+    function(code, imports, sp, b, class)
+        code:println 'do'
+        code:println('    return s%u', sp - 1)
+        code:println 'end'
     end,
-    [0xb1] = function(vm, lua, class, sp, b)
-        lua:println('return')
-        return 0
+    -- b1 return
+    function(code, imports, sp, b, class)
+        code:println 'do'
+        code:println '    return'
+        code:println 'end'
     end,
-    [0xb2] = function(vm, lua, class, sp, b)
+    -- b2 getstatic
+    function(code, imports, sp, b, class)
         local cpool = class.constantPool
         local fieldref = cpool[b:read '2']
         local className = cpool[cpool[fieldref.classIndex].nameIndex].bytes
         local nameAndType = cpool[fieldref.nameAndTypeIndex]
         local name = cpool[nameAndType.nameIndex].bytes
         local descriptor = cpool[nameAndType.descriptorIndex].bytes
+        local slots = utils.countSlots(descriptor)
 
-        lua.scratch.imports[className] = true
+        imports[className] = 'class'
 
-        lua:println('s', sp, ' = _', h(crc32(className), 8), '[', q(name), '] -- ', className, ' ', descriptor)
+        code:println('-- %s.%s %s', className, name, descriptor)
+        code:println('s%u = _%08x%s', sp, crc32(className), i(name))
     end,
-    [0xb3] = function(vm, lua, class, sp, b)
+    -- b3 putstatic
+    function(code, imports, sp, b, class)
         local cpool = class.constantPool
         local fieldref = cpool[b:read '2']
         local className = cpool[cpool[fieldref.classIndex].nameIndex].bytes
         local nameAndType = cpool[fieldref.nameAndTypeIndex]
         local name = cpool[nameAndType.nameIndex].bytes
         local descriptor = cpool[nameAndType.descriptorIndex].bytes
+        local slots = utils.countSlots(descriptor)
 
-        lua.scratch.imports[className] = true
+        imports[className] = 'class'
 
-        lua:println('_', h(crc32(className), 8), '[', q(name), '] = s', sp - 1, ' -- ', className, ' ', descriptor)
+        code:println('-- %s.%s %s', className, name, descriptor)
+        code:println('_%08x%s = s%u', crc32(className), i(name), sp - slots)
+
+        if descriptor:byte(1) == 76 then -- L
+            code:println('s%u = nil', sp - 1)
+        end
     end,
-    [0xb4] = function(vm, lua, class, sp, b)
+    -- b4 getfield
+    function(code, imports, sp, b, class)
         local cpool = class.constantPool
         local fieldref = cpool[b:read '2']
         local className = cpool[cpool[fieldref.classIndex].nameIndex].bytes
         local nameAndType = cpool[fieldref.nameAndTypeIndex]
         local name = cpool[nameAndType.nameIndex].bytes
         local descriptor = cpool[nameAndType.descriptorIndex].bytes
+        local slots = utils.countSlots(descriptor)
 
-        lua:println('s', sp - 1, ' = s', sp - 1, '[', q(name), '] -- ', className, ' ', descriptor)
+        code:println('-- %s.%s %s', className, name, descriptor)
+        code:println('s%u = s%u%s', sp - 1, sp - 1, i(name))
     end,
-    [0xb5] = function(vm, lua, class, sp, b)
+    -- b5 putfield
+    function(code, imports, sp, b, class)
         local cpool = class.constantPool
         local fieldref = cpool[b:read '2']
         local className = cpool[cpool[fieldref.classIndex].nameIndex].bytes
         local nameAndType = cpool[fieldref.nameAndTypeIndex]
         local name = cpool[nameAndType.nameIndex].bytes
         local descriptor = cpool[nameAndType.descriptorIndex].bytes
+        local slots = utils.countSlots(descriptor)
 
-        lua:println('s', sp - 1, '[', q(name), '] = s', sp - 1, ' -- ', className, ' ', descriptor)
+        code:println('-- %s.%s %s', className, name, descriptor)
+        code:println('s%u%s = s%u', sp - 1 - slots, i(name), sp - slots)
+        code:println('s%u = nil', sp - slots)
+
+        if descriptor:byte(1) == 76 then -- L
+            code:println('s%u = nil', sp - 1)
+        end
     end,
-    [0xb6] = function(vm, lua, class, sp, b)
-        invoke(lua, class.constantPool, b:read '2', false, sp)
+    -- b6 invokevirtual
+    function(code, imports, sp, b, class)
+        generateInvoke(code, imports, sp, b, class, b:read '2', false)
     end,
-    [0xb7] = function(vm, lua, class, sp, b)
-        invoke(lua, class.constantPool, b:read '2', false, sp)
+    -- b7 invokespecial
+    function(code, imports, sp, b, class)
+        generateInvoke(code, imports, sp, b, class, b:read '2', false)
     end,
-    [0xb8] = function(vm, lua, class, sp, b)
-        invoke(lua, class.constantPool, b:read '2', true, sp)
+    -- b8 invokestatic
+    function(code, imports, sp, b, class)
+        generateInvoke(code, imports, sp, b, class, b:read '2', true)
     end,
-    [0xb9] = function(vm, lua, class, sp, b)
-        invoke(lua, class.constantPool, b:read '2', false, sp)
+    -- b9 invokeinterface
+    function(code, imports, sp, b, class)
+        generateInvoke(code, imports, sp, b, class, b:read '2', false)
     end,
-    [0xbb] = function(vm, lua, class, sp, b)
+    -- ba
+    nil,
+    -- bb new
+    function(code, imports, sp, b, class)
         local cpool = class.constantPool
         local className = cpool[cpool[b:read '2'].nameIndex].bytes
-        lua:println('s', sp, ' = {} -- ', className)
+        code:println('s%u = {}', sp)
+        code:println('_%08x%s(s%u) -- %s', crc32(className), i('<new>()V'), sp, className)
     end,
-    [0xbc] = function(vm, lua, class, sp, b)
-        lua:println(dump(b:read(1)))
+    -- bc newarray
+    function(code, imports, sp, b, class)
+        local type = b:read '1'
+        code:println('s%u = newarray(s%u) -- %u', sp - 1, sp - 1, type)
     end,
-    [0xbd] = function(vm, lua, class, sp, b)
-        lua:println 'do'
-        lua:println('    local n = s', sp - 1)
-        lua:println('    maybeThrowNegativeArraySizeException(n)')
-        lua:println('    s', sp - 1, ' = {n = n, t = \'L\'}')
-        lua:println '    for i = 1, n do'
-        lua:println('        s', sp - 1, '[i] = nil')
-        lua:println '    end'
-        lua:println 'end'
+    -- bd anewarray
+    function(code, imports, sp, b, class)
+        local index = b:read '2'
+        local cpool = class.constantPool
+        local className = cpool[cpool[index].nameIndex].bytes
+        code:println('s%u = anewarray(s%u) -- %q', sp - 1, sp - 1, className)
     end,
-    [0xbe] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 1, ')')
-        lua:println('s', sp - 1, ' = s', sp - 1, '.n')
+    -- be arraylength
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s', sp - 1, ')')
+        code:println('s%u = s%u.n', sp - 1, sp - 1)
     end,
-    [0xbf] = function(vm, lua, class, sp, b)
-        lua:println('maybeThrowNullPointerException(s', sp - 1, ')')
-        lua:println('error(s', sp - 1, ')')
+    -- bf athrow
+    function(code, imports, sp, b, class)
+        code:println('maybeThrowNullPointerException(s%u)', sp - 1)
+        code:println('error(s%u)', sp - 1)
     end,
-    [0xc0] = function(vm, lua, class, sp, b)
+    -- c0 checkcast
+    function(code, imports, sp, b, class)
     end,
-    [0xc1] = function(vm, lua, class, sp, b)
-        local type = b:read '2'
-        lua:println('-- ', type.tag)
+    -- c1 instanceof
+    function(code, imports, sp, b, class)
+        local index = b:read '2'
+        local cpool = class.constantPool
+        local className = cpool[cpool[index].nameIndex].bytes
+        code:println('s%u = instanceof(%q)', sp - 1, className)
     end,
-    [0xc2] = function(vm, lua, class, sp, b)
+    -- c2 monitorenter
+    function(code, imports, sp, b, class)
+        code:println('monitorenter(s%u)', sp - 1)
+        code:println('s%u = nil', sp - 1)
     end,
-    [0xc3] = function(vm, lua, class, sp, b)
+    -- c3 monitorexit
+    function(code, imports, sp, b, class)
+        code:println('monitorexit(s%u)', sp - 1)
+        code:println('s%u = nil', sp - 1)
     end,
-    [0xc4] = function(vm, lua, class, sp, b)
-        lua:println(dump(b:read(3)))
+    -- c4 wide
+    function(code, imports, sp, b, class)
+        local op = b:read '1'
+        local index = b:read '2'
+
+        if op == 0x15 or op == 0x17 or op == 0x19 then
+            -- iload, fload, aload
+            code:println('s%u = l%u', sp, index)
+        elseif op == 0x36 or op == 0x38 or op == 0x3a then
+            -- istore, fstore, astore
+            code:println('l%u = s%u', index, sp - 1)
+        elseif op == 0x16 or op == 0x18 then
+            -- lload, dload
+            code:println('s%u = l%u', sp, index)
+        elseif op == 0x37 or op == 0x39 then
+            -- lstore, dstore
+            code:println('l%u = s%u', index, sp - 2)
+        elseif op == 0xa9 then
+            -- ret
+            code:println('-- ret l%u', index)
+        elseif op == 0x84 then
+            -- iinc
+            local const = b:read 's'
+            code:println('l%u = iadd(l%u, %d)', index, index, const)
+        end
     end,
-    [0xc5] = function(vm, lua, class, sp, b)
-        local type = class.constantPool[b:read '2'].bytes
+    -- c5 multianewarray
+    function(code, imports, sp, b, class)
+        local index = b:read '2'
+        local cpool = class.constantPool
+        local className = cpool[cpool[index].nameIndex].bytes
         local dimensions = b:read '1'
-        local counts = {}
+
+        code:indentation()
+        code:write('s%u = multianewarray(%u', sp - dimensions, dimensions)
 
         for i = dimensions, 1, -1 do
-            counts[#counts + 1] = f('s%u', sp - i)
+            code:write(', s%u', sp - i)
         end
 
-        count = table.concat(counts, ', ')
-        lua:println('s', sp - dimensions, ' = newMultidimensionalArray("', type, '", ', count, ') -- multianewarray')
+        code:write(') -- %q', className)
+        code:eol()
     end,
-    [0xc6] = function(vm, lua, class, sp, b)
+    -- c6 ifnull
+    function(code, imports, sp, b, class)
         local pc = b:tell() - 1
         local offset = b:read('s')
-        lua:println('if s', sp - 1, ' == nil then goto _', h(pc + offset, 4))
+
+        code:println 'do'
+        code:println('    local test = s%u', sp - 1)
+        code:println('    s%u = nil', sp - 1)
+        code:println('    if test == nil then goto _%04x', pc + offset)
+        code:println 'end'
     end,
-    [0xc7] = function(vm, lua, class, sp, b)
+    -- c7 ifnonnull
+    function(code, imports, sp, b, class)
         local pc = b:tell() - 1
         local offset = b:read('s')
-        lua:println('if s', sp - 1, ' ~= nil then goto _', h(pc + offset, 4))
+
+        code:println 'do'
+        code:println('    local test = s%u', sp - 1)
+        code:println('    s%u = nil', sp - 1)
+        code:println('    if test ~= nil then goto _%04x', pc + offset)
+        code:println 'end'
     end,
-    [0xc8] = function(vm, lua, class, sp, b)
+    -- c8 goto_w
+    function(code, imports, sp, b, class)
         local pc = b:tell() - 1
         local offset = b:read 'I'
-        lua:println('goto _', h(pc + offset, 4))
+        code:println('goto _%04x', pc + offset)
     end,
-    [0xc9] = function(vm, lua, class, sp, b)
+    -- c9 jsr_w
+    function(code, imports, sp, b, class)
         local pc = b:tell() - 1
         local offset = b:read 'I'
-        lua:println('s', sp, ' = ', pc + 5)
-        lua:println('goto _', h(pc + offset, 4))
+        code:println('s%u = %u', sp, pc + 3)
+        code:println('goto _%04x', pc + offset)
     end,
 }
 
-local function generateCode(vm, lua, class, code, jumps)
-    local sp = 0
-    local b = code.code
+local function generateNew(code, imports, class)
+    local cpool = class.constantPool
 
-    for pc, op, name, size, deltasp in bytecode.opcodes(b, class.constantPool) do
+    code:println('%s = function(l0)', i('<new>()V'))
+
+    for j = 1, class.fields.n do
+        local field = class.fields[j]
+        local name = cpool[field.nameIndex].bytes
+        local descriptor = cpool[field.descriptorIndex].bytes
+
+        local value
+
+        if descriptor:byte(1, 1) == 76 then -- L
+            value = 'nil'
+        else
+            value = '0'
+        end
+
+        code:println('    l0%s = %s', i(name), value)
+    end
+
+    if class.super ~= 0 then
+        local superName = cpool[cpool[class.superClass].nameIndex].bytes
+        imports[superName] = 'class'
+
+        code:eol()
+        code:println('    _%08x%s(l0) -- %s', crc32(superName), i('<new>()V'), superName)
+    end
+
+    code:println 'end,'
+    code:eol()
+end
+
+local function generateCode(code, imports, b, class, jumps)
+    local cpool = class.constantPool
+    local sp = 0
+
+    for pc, op, name, size, deltasp in bytecode.opcodes(b, cpool) do
         local addr = f('-- %04x     ', pc)
 
         for i = 1, jumps.n do
@@ -942,87 +1296,107 @@ local function generateCode(vm, lua, class, code, jumps)
             end
         end
 
-        lua:println(addr, ' ', h(op, 2), ' ', name, r(' ', 16 - #name), size, ' ', f('%2d', deltasp), ' ', f('%2u', sp))
+        code:println('%s %02x %s %s %u %2u', addr, op, name, r(' ', 16 - #name), size, sp)
 
         b:seek(pc + 1, 'set')
-        generators[op](vm, lua, class, sp, b)
-        
-        if deltasp < 0 then
-            for i = -1, deltasp, -1 do
-                lua:println('s', sp + i, ' = nil')
-            end
-        end
+        generators[op](code, imports, sp, b, class)
 
         sp = sp + deltasp
-        lua:eol()
+        code:eol()
     end
 end
 
-return function(vm, class)
-    local lua = utils.codeGenerator()
-    lua.scratch.imports = {}
+local function generateMethod(code, imports, class, method)
+    local cpool = class.constantPool
+    local name = cpool[method.nameIndex].bytes
+    local descriptor = cpool[method.descriptorIndex].bytes
 
-    lua:println 'return {'
-    lua:indent()
+    -- Exception table.
+    do
+        local et = method.attributes.code.exceptionTable
 
-    for i = 1, class.methods.n do
-        local cpool = class.constantPool
-        local method = class.methods[i]
-        local name = cpool[method.nameIndex].bytes
-        local descriptor = cpool[method.descriptorIndex].bytes
+        for i = 1, et.n do
+            local e = et[i]
+            local catchType = e.catchType == 0 and 'java.lang.Throwable' or cpool[cpool[e.catchType].nameIndex].bytes
+            
+            code:println('-- %04x %04x %04x %s', e.startPc, e.endPc, e.handlerPc, catchType)
+        end
+    end
 
-        do
-            lua:indentation()
-            lua:write('[', q(name .. descriptor), '] = function(')
+    -- Method definition with locals.
+    -- All locals will be defined as parameters, which is fine.
+    do
+        code:indentation()
+        code:write('%s = function(', i(name .. descriptor))
+        local comma = ''
+    
+        for i = 1, method.attributes.code.maxLocals do
+            code:write('%sl%u', comma, i - 1)
+            comma = ', '
+        end
+    
+        code:write ')'
+        code:eol()
+    end
+
+    code:indent()
+
+    -- Stack.
+    do
+        local maxStack = method.attributes.code.maxStack
+
+        if maxStack > 0 then
+            code:indentation()
+            code:write 'local '
             local comma = ''
-
-            for i = 1, method.attributes.code.maxLocals do
-                lua:write(comma, 'l', i - 1)
+    
+            for i = 1, maxStack do
+                code:write('%ss%u', comma, i - 1)
                 comma = ', '
             end
-
-            lua:write(')')
-            lua:eol()
+    
+            code:eol()
+            code:eol()
         end
+    end
 
-        lua:indent()
+    local jumps = collectJumps(method, cpool)
+    generateCode(code, imports, method.attributes.code.code, class, jumps)
 
-        do
-            if method.attributes.code.maxStack > 0 then
-                lua:indentation()
-                lua:write('local ')
-                local comma = ''
+    code:unindent()
+    code:println 'end,'
+    code:eol()
+end
 
-                for i = 1, method.attributes.code.maxStack do
-                    lua:write(comma, 's', i - 1)
-                    comma = ', '
-                end
+return function(vm, class)
+    local cpool = class.constantPool
+    local code = utils.codeGenerator()
+    local imports = {}
 
-                lua:eol()
+    code:println 'return {'
+    code:indent()
+
+    generateNew(code, imports, class)
+
+    for i = 1, class.methods.n do
+        generateMethod(code, imports, class, class.methods[i])
+    end
+
+    code:unindent()
+    code:println '}'
+
+    local header = utils.codeGenerator()
+
+    for name, type in pairs(imports) do
+        if type == 'class' then
+            if name ~= cpool[cpool[class.thisClass].nameIndex].bytes then
+                header:println('local _%08x = vm:load %q', crc32(name), name)
             end
+        elseif type == 'string' then
+            header:println('local _%08x = vm:string %q', crc32(name), name)
         end
-
-        lua:eol()
-
-        local jumps = collectJumps(method, cpool)
-        generateCode(vm, lua, class, method.attributes.code, jumps)
-
-        lua:unindent()
-        lua:println 'end,'
-        lua:eol()
     end
 
-    lua:unindent()
-    lua:println '}'
-
-    lua:swap()
-
-    for className in pairs(lua.scratch.imports) do
-        lua:println('local _', h(crc32(className), 8), ' = vm:load(', q(className), ')')
-    end
-
-    lua:eol()
-    lua:swap()
-
-    print(lua:finish())
+    header:write(code:finish())
+    print(header:finish())
 end
