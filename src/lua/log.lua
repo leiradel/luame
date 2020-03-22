@@ -2,35 +2,35 @@ if _LUAME_DEBUG then
     return {
         info = function(...)
             local args = {...}
-            io.write('[INFO ] ')
+            io.stderr:write('[INFO ] ')
 
             for i = 1, #args do
-                io.write(tostring(args[i]))
+                io.stderr:write(tostring(args[i]))
             end
 
-            io.write('\n')
+            io.stderr:write('\n')
         end,
 
         warn = function(...)
             local args = {...}
-            io.write('[WARN ] ')
+            io.stderr:write('[WARN ] ')
 
             for i = 1, #args do
-                io.write(tostring(args[i]))
+                io.stderr:write(tostring(args[i]))
             end
 
-            io.write('\n')
+            io.stderr:write('\n')
         end,
 
         error = function(...)
             local args = {...}
-            io.write('[ERROR] ')
+            io.stderr:write('[ERROR] ')
 
             for i = 1, #args do
-                io.write(tostring(args[i]))
+                io.stderr:write(tostring(args[i]))
             end
 
-            io.write('\n')
+            io.stderr:write('\n')
         end
     }
 else
