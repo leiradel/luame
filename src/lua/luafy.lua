@@ -96,10 +96,10 @@ local function generateIf(code, sp, b, operator, setnil)
         code:println 'do'
         code:println('    local test1, test2 = s%u, s%u', sp - 2, sp - 1)
         code:println('    s%u, s%u = nil, nil', sp - 1, sp - 2)
-        code:println('    if test1 %s test2 then goto _%04x', operator, pc + offset)
+        code:println('    if test1 %s test2 then goto _%04x end', operator, pc + offset)
         code:println 'end'
     else
-        code:println('if s%u %s s%u then goto _%04x', sp - 2, operator, sp - 1, pc + offset)
+        code:println('if s%u %s s%u then goto _%04x end', sp - 2, operator, sp - 1, pc + offset)
     end
 
     return -2
@@ -108,7 +108,7 @@ end
 local function generateIf0(code, sp, b, operator)
     local pc = b:tell() - 1
     local offset = b:read 's'
-    code:println('if s%u %s 0 then goto _%04x', sp - 1, operator, pc + offset)
+    code:println('if s%u %s 0 then goto _%04x end', sp - 1, operator, pc + offset)
     return -1
 end
 
@@ -445,7 +445,7 @@ local generators = {
     end,
     -- 3a astore
     function(code, imports, sp, b, class)
-        code:println('l', b:read '1', ' = s', sp - 1)
+        code:println('l%u = s%u', b:read '1', sp - 1)
         code:println('s%u = nil', sp - 1)
     end,
     -- 3b istore_0
@@ -1138,7 +1138,7 @@ local generators = {
     end,
     -- be arraylength
     function(code, imports, sp, b, class)
-        code:println('maybeThrowNullPointerException(s', sp - 1, ')')
+        code:println('maybeThrowNullPointerException(s%s)', sp - 1)
         code:println('s%u = s%u.n', sp - 1, sp - 1)
     end,
     -- bf athrow
@@ -1217,7 +1217,7 @@ local generators = {
         code:println 'do'
         code:println('    local test = s%u', sp - 1)
         code:println('    s%u = nil', sp - 1)
-        code:println('    if test == nil then goto _%04x', pc + offset)
+        code:println('    if test == nil then goto _%04x end', pc + offset)
         code:println 'end'
     end,
     -- c7 ifnonnull
@@ -1228,7 +1228,7 @@ local generators = {
         code:println 'do'
         code:println('    local test = s%u', sp - 1)
         code:println('    s%u = nil', sp - 1)
-        code:println('    if test ~= nil then goto _%04x', pc + offset)
+        code:println('    if test ~= nil then goto _%04x end', pc + offset)
         code:println 'end'
     end,
     -- c8 goto_w
@@ -1373,6 +1373,7 @@ return function(vm, class)
     local code = utils.codeGenerator()
     local imports = {}
 
+    code:indent()
     code:println 'return {'
     code:indent()
 
@@ -1384,19 +1385,26 @@ return function(vm, class)
 
     code:unindent()
     code:println '}'
+    code:unindent()
 
     local header = utils.codeGenerator()
+    header:println 'return function(vm)'
 
     for name, type in pairs(imports) do
         if type == 'class' then
             if name ~= cpool[cpool[class.thisClass].nameIndex].bytes then
-                header:println('local _%08x = vm:load %q', crc32(name), name)
+                header:println('    local _%08x = vm:define %q', crc32(name), name)
             end
         elseif type == 'string' then
-            header:println('local _%08x = vm:string %q', crc32(name), name)
+            header:println('    local _%08x = vm:string %q', crc32(name), name)
         end
     end
 
+    header:eol()
     header:write(code:finish())
-    print(header:finish())
+    header:println 'end'
+    
+    local source = header:finish()
+    print(source)
+    return source
 end
