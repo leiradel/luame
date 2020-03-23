@@ -1236,30 +1236,38 @@ local generators = {
 
 local function generateNew(code, imports, class)
     local cpool = class.constantPool
+    local hasInstanceFields = false
 
     code:println('%s = function(l0)', i('<new>()V'))
 
     for j = 1, class.fields.n do
         local field = class.fields[j]
-        local name = cpool[field.nameIndex].bytes
-        local descriptor = cpool[field.descriptorIndex].bytes
 
-        local value
+        if not field.accessFlags.static then
+            local name = cpool[field.nameIndex].bytes
+            local descriptor = cpool[field.descriptorIndex].bytes
 
-        if descriptor:byte(1, 1) == 76 then -- L
-            value = 'nil'
-        else
-            value = '0'
+            local value
+
+            if descriptor:byte(1, 1) == 76 then -- L
+                value = 'nil'
+            else
+                value = '0'
+            end
+
+            code:println('    l0%s = %s', i(name), value)
+            hasInstanceFields = true
         end
-
-        code:println('    l0%s = %s', i(name), value)
     end
 
     if class.superClass ~= 0 then
         local superName = cpool[cpool[class.superClass].nameIndex].bytes
         imports[superName] = 'class'
 
-        code:eol()
+        if hasInstanceFields then
+            code:eol()
+        end
+
         code:println('    _%08x%s(l0) -- %s', crc32(superName), i('<new>()V'), superName)
     end
 
