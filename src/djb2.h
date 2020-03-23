@@ -5,5 +5,4 @@
 
 uint32_t djb2(char const* str);
 
-#endif
-
+#endif // DJB2_H__

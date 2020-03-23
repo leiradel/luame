@@ -9,7 +9,6 @@
 
 #include "classes.zip.h"
 
-
 static voidpf open_file(voidpf opaque, const char* filename, int mode) {
     static size_t pos;
 
