@@ -120,7 +120,7 @@ local function generateInvoke(code, imports, sp, b, class, index, static)
     local name = cpool[nameAndType.nameIndex].bytes
     local descriptor = cpool[nameAndType.descriptorIndex].bytes
 
-    imports[className] = true
+    imports[className] = 'class'
 
     local slots = utils.countSlots(descriptor)
 
@@ -1255,7 +1255,7 @@ local function generateNew(code, imports, class)
         code:println('    l0%s = %s', i(name), value)
     end
 
-    if class.super ~= 0 then
+    if class.superClass ~= 0 then
         local superName = cpool[cpool[class.superClass].nameIndex].bytes
         imports[superName] = 'class'
 
