@@ -1000,39 +1000,27 @@ local generators = {
     end,
     -- ac ireturn
     function(code, imports, sp, b, class)
-        code:println 'do'
-        code:println('    return s%u', sp - 1)
-        code:println 'end'
+        code:println('do return s%u end', sp - 1)
     end,
     -- ad lreturn
     function(code, imports, sp, b, class)
-        code:println 'do'
-        code:println('    return s%u', sp - 1)
-        code:println 'end'
+        code:println('do return s%u end', sp - 1)
     end,
     -- ae freturn
     function(code, imports, sp, b, class)
-        code:println 'do'
-        code:println('    return s%u', sp - 1)
-        code:println 'end'
+        code:println('do return s%u end', sp - 1)
     end,
     -- af dreturn
     function(code, imports, sp, b, class)
-        code:println 'do'
-        code:println('    return s%u', sp - 1)
-        code:println 'end'
+        code:println('do return s%u end', sp - 1)
     end,
     -- b0 areturn
     function(code, imports, sp, b, class)
-        code:println 'do'
-        code:println('    return s%u', sp - 1)
-        code:println 'end'
+        code:println('do return s%u end', sp - 1)
     end,
     -- b1 return
     function(code, imports, sp, b, class)
-        code:println 'do'
-        code:println '    return'
-        code:println 'end'
+        code:println 'do return end'
     end,
     -- b2 getstatic
     function(code, imports, sp, b, class)
