@@ -1309,7 +1309,7 @@ local function generateMethod(code, imports, class, method)
 
     if method.accessFlags.native then
         local className = cpool[cpool[class.thisClass].nameIndex].bytes
-        code:println('%s = luame.native[]', i(name .. descriptor), i(f('%s.%s%s', className, name, descriptor)))
+        code:println('%s = luame.native%s,', i(name .. descriptor), i(f('%s.%s%s', className, name, descriptor)))
         code:eol()
         return
     end
