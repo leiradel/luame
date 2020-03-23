@@ -70,7 +70,7 @@ src/version.c: FORCE
 
 src/modules.o: $(LUA_FILES)
 
-src/classes.c: src/classes.zip.h
+src/classes.o: src/classes.zip.h
 
 src/classes.zip.h: src/classes/classes.zip
 	xxd -i $< \
