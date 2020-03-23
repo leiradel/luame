@@ -1299,6 +1299,13 @@ local function generateMethod(code, imports, class, method)
     local name = cpool[method.nameIndex].bytes
     local descriptor = cpool[method.descriptorIndex].bytes
 
+    if method.accessFlags.native then
+        local className = cpool[cpool[class.thisClass].nameIndex].bytes
+        code:println('%s = luame.native[]', i(name .. descriptor), i(f('%s.%s%s', className, name, descriptor)))
+        code:eol()
+        return
+    end
+
     -- Exception table.
     do
         local et = method.attributes.code.exceptionTable
