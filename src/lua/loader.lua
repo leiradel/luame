@@ -338,7 +338,7 @@ local function readAttribute(b, cpool)
     else
         if _LUAME_DEBUG then
             if not warned[tag] then
-                log.warn('Skipping unknown attribute ', tag, ' (only showed once)')
+                log.warn('Skipping unknown attribute ', tag, ' (only reported once)')
                 warned[tag] = true
             end
         end
