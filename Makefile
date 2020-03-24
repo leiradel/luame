@@ -48,6 +48,10 @@ LUA_FILES = \
 	src/lua/vm.lua.h
 
 CLASS_FILES = \
+	src/classes/java/lang/Object.class \
+	src/classes/java/lang/String.class \
+	src/classes/java/lang/StringBuffer.class \
+	src/classes/java/lang/System.class \
 	src/classes/java/lang/Thread.class \
 	src/classes/javax/microedition/midlet/MIDlet.class
 
