@@ -1,6 +1,8 @@
 package java.lang;
 
-public class Thread {
+public abstract class Thread {
+    private native void construct(Runnable target);
+
     // The maximum priority that a thread can have.
     public static int MAX_PRIORITY = 1;
 
@@ -11,11 +13,14 @@ public class Thread {
     public static int NORM_PRIORITY = 3;
 
     // Allocates a new Thread object.
-    public Thread() {this(null);}
+    public Thread() {
+        this(null);
+    }
 
     // Allocates a new Thread object.
-    public Thread(Runnable target) {construct(this);}
-    private native void construct(Thread self);
+    public Thread(Runnable target) {
+        construct(target);
+    }
 
     // Returns the current number of active threads in the VM.
     public static native int activeCount();
@@ -24,19 +29,19 @@ public class Thread {
     public static native Thread currentThread();
 
     // Returns this thread's priority.
-    public native int getPriority();
+    public abstract int getPriority();
 
     // Tests if this thread is alive.
-    public native boolean isAlive();
+    public abstract boolean isAlive();
 
     // Waits for this thread to die.
-    public native void join();
+    public abstract void join();
 
     // If this thread was constructed using a separate Runnable run object, then that Runnable object's run method is called; otherwise, this method does nothing and returns.
     public native void run();
 
     // Changes the priority of this thread.
-    public native void setPriority(int newPriority);
+    public abstract void setPriority(int newPriority);
 
     // Causes the currently executing thread to sleep (temporarily cease execution) for the specified number of milliseconds.
     public static native void sleep(long millis);
@@ -45,7 +50,7 @@ public class Thread {
     public native void start();
 
     // Returns a string representation of this thread, including a unique number that identifies the thread and the thread's priority.
-    public native String toString();
+    public abstract String toString();
 
     // Causes the currently executing thread object to temporarily pause and allow other threads to execute.
     public static native void yield();

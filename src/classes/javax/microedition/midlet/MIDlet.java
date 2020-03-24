@@ -1,15 +1,18 @@
 package javax.microedition.midlet;
 
 public abstract class MIDlet {
+    private native void construct();
+
     // Protected constructor for subclasses.
-    protected MIDlet() {construct(this);}
-    private native void construct(MIDlet self);
+    protected MIDlet() {
+        construct();
+    }
 
     // Signals the MIDlet to terminate and enter the Destroyed state.
     protected abstract void destroyApp(boolean unconditional);
 
     // Provides a MIDlet with a mechanism to retrieve named properties from the application management software.
-    public native String getAppProperty(String key);
+    public abstract String getAppProperty(String key);
 
     // Used by an MIDlet to notify the application management software that it has entered into the Destroyed state.
     public native void notifyDestroyed();
