@@ -34,26 +34,16 @@ return function(jar)
             return utils.parseManifest(buffer)
         end,
 
-        luafy = function(self, class)
-            local cpool = class.constantPool
-            local className = cpool[cpool[class.thisClass].nameIndex].bytes
-
+        luafy = function(self, class, className)
             log.info('Translating ', className, ' to Lua source code')
-            local source = luafy(self, class)
+            local main, err = luafy(self, class)
 
-            log.info('Parsing Lua source code for ', className)
-            local defFunc, err = load(source, className .. '.lua', 't')
-
-            if not defFunc then
+            if not main then
                 log.error('Error in Lua source code for ', className, ': ', err)
                 error(err)
             end
 
-            log.info('Running defining Lua function for ', className)
-            local creator = defFunc()
-
-            log.info('Running creator for ', className)
-            return creator(self)
+            return main
         end,
 
         define = function(self, className)
@@ -66,11 +56,19 @@ return function(jar)
             end
 
             class = self:load(className)
-            class = self:luafy(class)
+            local main = self:luafy(class, className)
+
+            log.info('Defining class ', className)
+            local creator = main()
+            local definition = creator(self)
 
             log.info('Adding class ', className, ' to the cache')
-            cache[className] = class
-            return class
+            cache[className] = definition
+
+            log.info('Running post initialization for ', className)
+            definition['<post>()V']()
+
+            return definition
         end,
 
         string = function(self, str)
@@ -91,6 +89,18 @@ return function(jar)
             class['<new>()V'](instance)
             class[constructor](instance, ...)
             return instance
+        end,
+
+        abstract = function(self, methodName)
+            return function()
+                error(string.format('call to abstract method %s', methodName))
+            end
+        end,
+
+        native = function(self, methodName)
+            return function()
+                error(string.format('call to native method %s', methodName))
+            end
         end
     }
 end

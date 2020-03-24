@@ -72,45 +72,5 @@ return {
                 pairs[key] = value
             end
         end
-    end,
-
-    codeGenerator = function()
-        return {
-            code = {},
-            level = 0,
-    
-            indentation = function(self)
-                local code = self.code
-                code[#code + 1] = string.rep('    ', self.level)
-            end,
-    
-            write = function(self, fmt, ...)
-                local code = self.code
-                code[#code + 1] = format(fmt, ...)
-            end,
-    
-            eol = function(self)
-                local code = self.code
-                code[#code + 1] = '\n'
-            end,
-    
-            println = function(self, fmt, ...)
-                self:indentation()
-                self:write(fmt, ...)
-                self:eol()
-            end,
-
-            indent = function(self)
-                self.level = self.level + 1
-            end,
-    
-            unindent = function(self)
-                self.level = self.level - 1
-            end,
-    
-            finish = function(self)
-                return table.concat(self.code, '')
-            end
-        }
     end
 }
