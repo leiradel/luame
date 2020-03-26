@@ -9,7 +9,7 @@ public class Object {
      * Returns:the object of type Class that represents the
      *           runtime class of the object.
      */
-    public final Class getClass();
+    public final native Class getClass();
 
     /**
      * Returns a hash code value for the object. This method is
@@ -44,7 +44,9 @@ public class Object {
      * Returns:a hash code value for this object.See Also:equals(java.lang.Object),
      * Hashtable
      */
-    public int hashCode();
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
 
     /**
      * Indicates whether some other object is "equal to" this one.
@@ -82,7 +84,9 @@ public class Object {
      *           argument; false otherwise.See Also:Boolean.hashCode(),
      * Hashtable
      */
-    public boolean equals(Object obj);
+    public boolean equals(Object obj) {
+        return this == obj;
+    }
 
     /**
      * Returns a string representation of the object. In general, the
@@ -103,7 +107,7 @@ public class Object {
      * 
      * Returns:a string representation of the object.
      */
-    public String toString();
+    public native String toString();
 
     /**
      * Wakes up a single thread that is waiting on this object's
@@ -136,7 +140,7 @@ public class Object {
      *                the owner of this object's monitor.See Also:notifyAll(),
      * wait()
      */
-    public final void notify();
+    public native final void notify();
 
     /**
      * Wakes up all threads that are waiting on this object's monitor. A
@@ -160,7 +164,7 @@ public class Object {
      *              not the owner of this object's monitor.See Also:notify(),
      * wait()
      */
-    public final void notifyAll();
+    public native final void notifyAll();
 
     /**
      * Causes current thread to wait until either another thread invokes the
@@ -226,8 +230,7 @@ public class Object {
      *              current thread is cleared when this exception is thrown.See Also:notify(),
      * notifyAll()
      */
-    public final void wait(long timeout)
-                throws InterruptedException;
+    public final native void wait(long timeout) throws InterruptedException;
 
     /**
      * Causes current thread to wait until another thread invokes the
@@ -278,8 +281,5 @@ public class Object {
      *              the current thread.  The interrupted status of the
      *              current thread is cleared when this exception is thrown.
      */
-    public final void wait(long timeout,
-                       int nanos)
-                throws InterruptedException;
-
+    public native final void wait(long timeout, int nanos) throws InterruptedException;
 }
