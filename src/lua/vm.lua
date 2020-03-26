@@ -2,6 +2,8 @@ local loader = require 'luame.loader'
 local utils = require 'luame.utils'
 local luafy = require 'luame.luafy'
 local classes = require 'luame.classes'
+local native = require 'luame.native'
+local opcodes = require 'luame.opcodes'
 local log = require 'luame.log'
 
 local format = string.format
@@ -10,7 +12,7 @@ return function(jar)
     local cache = {}
     local strings = {}
 
-    return {
+    local vm = {
         load = function(self, className)
             log.info('Loading class ', className)
             local path = format('%s.class', className)
@@ -47,11 +49,9 @@ return function(jar)
         end,
 
         define = function(self, className)
-            log.info('Defining class ', className)
             local class = cache[className]
 
             if class then
-                log.info('Class ', className, ' found in cache')
                 return class
             end
 
@@ -79,7 +79,7 @@ return function(jar)
             end
 
             local stringClass = self:define('java/lang/String')
-            instance = self:new(stringClass, '<init>(I)V', str)
+            instance = self:new(stringClass, '<init>([B)V', str)
             strings[str] = instance
             return instance
         end,
@@ -98,9 +98,21 @@ return function(jar)
         end,
 
         native = function(self, methodName)
-            return function()
-                error(string.format('call to native method %s', methodName))
-            end
+            return native[methodName]
+        end,
+
+        opcodes = function(self, opcodeName)
+            return opcodes[opcodeName]
         end
     }
+
+    native = native(vm)
+
+    opcodes.maybeThrowNullPointerException = function(ref)
+        if ref == nil then
+            error('null pointer exception')
+        end
+    end
+
+    return vm
 end

@@ -3,61 +3,21 @@ local bytecode = require 'luame.bytecode'
 local crc32 = require 'luame.crc32'
 local log = require 'luame.log'
 
-local f = string.format
-local r = string.rep
+local format = string.format
+local rep = string.rep
 
-local function i(str)
+local function index(str)
     if str:match('^[a-zA-Z_][a-zA-Z_0-9]*$') then
-        return f('.%s', str)
+        return format('.%s', str)
     else
-        return f('[%q]', str)
+        return format('[%q]', str)
     end
 end
 
 local function yield(indent, fmt, ...)
-    local str = string.format('%s%s', string.rep(' ', indent * 4), string.format(fmt, ...))
-    io.stderr:write(str)
+    local str = format('%s%s', string.rep('    ', indent), format(fmt, ...))
+    io.write(str)
     coroutine.yield(str)
-end
-
-local function codeGenerator()
-    local format = string.format
-    local yield = coroutine.yield
-
-    return {
-        level = 0,
-
-        indentation = function(self)
-            local str = string.rep('    ', self.level)
-            io.stderr:write(str)
-            coroutine.yield(str)
-        end,
-
-        write = function(self, fmt, ...)
-            local str = format(fmt, ...)
-            io.stderr:write(str)
-            coroutine.yield(str)
-        end,
-
-        eol = function(self)
-            io.stderr:write('\n')
-            coroutine.yield('\n')
-        end,
-
-        println = function(self, fmt, ...)
-            self:indentation()
-            self:write(fmt, ...)
-            self:eol()
-        end,
-
-        indent = function(self)
-            self.level = self.level + 1
-        end,
-
-        unindent = function(self)
-            self.level = self.level - 1
-        end
-    }
 end
 
 local function collectJumps(method, cpool)
@@ -154,9 +114,9 @@ local function generateIf0(sp, b, operator)
     return -1
 end
 
-local function generateInvoke(sp, b, class, index, static)
+local function generateInvoke(sp, b, class, ndx, static)
     local cpool = class.constantPool
-    local methodref = cpool[index]
+    local methodref = cpool[ndx]
     local className = cpool[cpool[methodref.classIndex].nameIndex].bytes
     local nameAndType = cpool[methodref.nameAndTypeIndex]
     local name = cpool[nameAndType.nameIndex].bytes
@@ -176,7 +136,7 @@ local function generateInvoke(sp, b, class, index, static)
         yield(3, '')
     end
 
-    yield(0, '_%08x%s(', crc32(className), i(name .. descriptor))
+    yield(0, '_%08x%s(', crc32(className), index(name .. descriptor))
     local comma = ''
 
     for i = -slots, -1 do
@@ -1072,7 +1032,7 @@ local generators = {
         local slots = utils.countSlots(descriptor)
 
         yield(3, '-- %s %s.%s\n', descriptor, className, name)
-        yield(3, 's%u = _%08x%s\n', sp, crc32(className), i(name))
+        yield(3, 's%u = _%08x%s\n', sp, crc32(className), index(name))
     end,
     -- b3 putstatic
     function(sp, b, class)
@@ -1085,7 +1045,7 @@ local generators = {
         local slots = utils.countSlots(descriptor)
 
         yield(3, '-- %s %s.%s\n', descriptor, className, name)
-        yield(3, '_%08x%s = s%u\n', crc32(className), i(name), sp - slots)
+        yield(3, '_%08x%s = s%u\n', crc32(className), index(name), sp - slots)
 
         local k = descriptor:byte(1)
 
@@ -1104,7 +1064,7 @@ local generators = {
         local slots = utils.countSlots(descriptor)
 
         yield(3, '-- %s %s.%s\n', descriptor, className, name)
-        yield(3, 's%u = s%u%s\n', sp - 1, sp - 1, i(name))
+        yield(3, 's%u = s%u%s\n', sp - 1, sp - 1, index(name))
     end,
     -- b5 putfield
     function(sp, b, class)
@@ -1117,7 +1077,7 @@ local generators = {
         local slots = utils.countSlots(descriptor)
 
         yield(3, '-- %s %s.%s\n', descriptor, className, name)
-        yield(3, 's%u%s = s%u\n', sp - 1 - slots, i(name), sp - slots)
+        yield(3, 's%u%s = s%u\n', sp - 1 - slots, index(name), sp - slots)
         yield(3, 's%u = nil\n', sp - slots)
 
         local k = descriptor:byte(1)
@@ -1149,7 +1109,7 @@ local generators = {
         local cpool = class.constantPool
         local className = cpool[cpool[b:read '2'].nameIndex].bytes
         yield(3, 's%u = {}\n', sp)
-        yield(3, '_%08x%s(s%u) -- %s\n', crc32(className), i('<new>()V'), sp, className)
+        yield(3, '_%08x%s(s%u) -- %s\n', crc32(className), index('<new>()V'), sp, className)
     end,
     -- bc newarray
     function(sp, b, class)
@@ -1271,6 +1231,11 @@ local generators = {
     end,
 }
 
+local function generateOpcodes()
+    yield(1, 'local l2i = vm:opcodes "l2i"\n')
+    yield(1, 'local maybeThrowNullPointerException = vm:opcodes "maybeThrowNullPointerException"\n')
+end
+
 local function generateUpvalues(class)
     local cpool = class.constantPool
 
@@ -1293,7 +1258,7 @@ local function generatePost(class)
     local cpool = class.constantPool
     local className = cpool[cpool[class.thisClass].nameIndex].bytes
 
-    yield(2, '%s = function()\n', i('<post>()V'))
+    yield(2, '%s = function()\n', index('<post>()V'))
 
     for i = 1, cpool.n do
         local const = cpool[i]
@@ -1301,8 +1266,9 @@ local function generatePost(class)
         if const then
             if const.tag == 'class' then
                 local name = cpool[const.nameIndex].bytes
+                local k = name:byte(1)
 
-                if name ~= className then
+                if name ~= className and k ~= 91 then -- '['
                     yield(3, '_%08x = vm:define %q\n', crc32(name), name)
                 end
             elseif const.tag == 'string' then
@@ -1319,7 +1285,7 @@ local function generateNew(class)
     local cpool = class.constantPool
     local hasInstanceFields = false
 
-    yield(2, '%s = function(l0)\n', i('<new>()V'))
+    yield(2, '%s = function(l0)\n', index('<new>()V'))
 
     for j = 1, class.fields.n do
         local field = class.fields[j]
@@ -1336,7 +1302,7 @@ local function generateNew(class)
                 value = '0'
             end
 
-            yield(3, 'l0%s = %s\n', i(name), value)
+            yield(3, 'l0%s = %s\n', index(name), value)
             hasInstanceFields = true
         end
     end
@@ -1348,7 +1314,7 @@ local function generateNew(class)
             yield(0, '\n')
         end
 
-        yield(3, '_%08x%s(l0) -- %s\n', crc32(superName), i('<new>()V'), superName)
+        yield(3, '_%08x%s(l0) -- %s\n', crc32(superName), index('<new>()V'), superName)
     end
 
     yield(2, 'end,\n')
@@ -1359,19 +1325,19 @@ local function generateCode(b, class, jumps)
     local sp = 0
 
     for pc, op, name, size, deltasp in bytecode.opcodes(b, cpool) do
-        local addr = f('-- %04x     ', pc)
+        local addr = format('-- %04x     ', pc)
 
         for i = 1, jumps.n do
             local jump = jumps[i]
 
             if jump.target == pc then
                 sp = jump.sp
-                addr = f('::_%04x:: --', pc)
+                addr = format('::_%04x:: --', pc)
                 break
             end
         end
 
-        yield(3, '%s %02x %s %s %u %2u\n', addr, op, name, r(' ', 16 - #name), size, sp)
+        yield(3, '%s %02x %s %s %u %2u\n', addr, op, name, rep(' ', 16 - #name), size, sp)
 
         b:seek(pc + 1, 'set')
         generators[op](sp, b, class)
@@ -1388,12 +1354,12 @@ local function generateMethod(class, method)
 
     if method.accessFlags.native then
         local className = cpool[cpool[class.thisClass].nameIndex].bytes
-        yield(2, '%s = vm:native %q,\n', i(name .. descriptor), f('%s.%s%s', className, name, descriptor))
-        log.info(f('NATIVE %s.%s%s', className, name, descriptor))
+        yield(2, '%s = vm:native %q,\n', index(name .. descriptor), format('%s.%s%s', className, name, descriptor))
+        log.info(format('NATIVE %s.%s%s _%08x', className, name, descriptor, crc32(format('%s.%s%s', className, name, descriptor))))
         return
     elseif method.accessFlags.abstract then
         local className = cpool[cpool[class.thisClass].nameIndex].bytes
-        yield(2, '%s = vm:abstract %q,\n', i(name .. descriptor), f('%s.%s%s', className, name, descriptor))
+        yield(2, '%s = vm:abstract %q,\n', index(name .. descriptor), format('%s.%s%s', className, name, descriptor))
         return
     end
 
@@ -1412,7 +1378,7 @@ local function generateMethod(class, method)
     -- Method definition with locals.
     -- All locals will be defined as parameters, which is fine.
     do
-        yield(2, '%s = function(', i(name .. descriptor))
+        yield(2, '%s = function(', index(name .. descriptor))
         local comma = ''
     
         for i = 1, method.attributes.code.maxLocals do
@@ -1451,8 +1417,14 @@ local function generate(vm, class)
     local className = cpool[cpool[class.thisClass].nameIndex].bytes
     local crc = crc32(className)
 
+    yield(0, 'local opcodes = require "luame.opcodes"\n')
+    yield(0, '\n')
+    
     yield(0, '-- %s\n', className)
     yield(0, 'return function(vm)\n')
+        
+    generateOpcodes()
+    yield(0, '\n')
 
     generateUpvalues(class)
     yield(0, '\n')
@@ -1485,5 +1457,5 @@ return function(vm, class)
 
     local cpool = class.constantPool
     local className = cpool[cpool[class.thisClass].nameIndex].bytes
-    return load(loader, f('%s.lua', className), 't')
+    return load(loader, format('%s.lua', className), 't')
 end

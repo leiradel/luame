@@ -8,12 +8,15 @@
 #include "lua/loader.lua.h"
 #include "lua/log.lua.h"
 #include "lua/luafy.lua.h"
+#include "lua/native.lua.h"
 #include "lua/utils.lua.h"
 #include "lua/vm.lua.h"
 
+int luaopen_array(lua_State*);
 int luaopen_buffer(lua_State*);
 int luaopen_classes(lua_State*);
 int luaopen_crc32(lua_State*);
+int luaopen_opcodes(lua_State*);
 int luaopen_proxyud(lua_State*);
 int luaopen_zip(lua_State*);
 
@@ -47,11 +50,14 @@ static const module_t modules[] =
     MODL("luame.loader",   loader_lua),
     MODL("luame.log",      log_lua),
     MODL("luame.luafy",    luafy_lua),
+    MODL("luame.native",   native_lua),
     MODL("luame.utils",    utils_lua),
     MODL("luame.vm",       vm_lua),
+    MODC("luame.array",    luaopen_array),
     MODC("luame.buffer",   luaopen_buffer),
     MODC("luame.classes",  luaopen_classes),
     MODC("luame.crc32",    luaopen_crc32),
+    MODC("luame.opcodes",  luaopen_opcodes),
     MODC("luame.proxyud",  luaopen_proxyud),
     MODC("luame.zip",      luaopen_zip)
 };
