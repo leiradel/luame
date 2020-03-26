@@ -6,9 +6,14 @@ public class IOException extends Exception {
      *  as its error detail message.
      */
     public IOException() {
-        construct();
+        super();
     }
 
-    private native void construct();
-
+    /**
+     * Constructs an IOException with the
+     * specified detail message.
+     */
+    public IOException(String message) {
+        super(message);
+    }
 }
