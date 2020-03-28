@@ -163,9 +163,7 @@ public class Font {
      *  style, or size are not
      *  legal values
      */
-    public static Font getFont(int face,
-                           int style,
-                           int size);
+    public static Font getFont(int face, int style, int size);
 
     /**
      * Gets the style of the font. The value is an OR'ed
@@ -282,9 +280,7 @@ public class Font {
      *  invalid range
      * NullPointerException - if ch is null
      */
-    public int charsWidth(char[] ch,
-                      int offset,
-                      int length);
+    public int charsWidth(char[] ch, int offset, int length);
 
     /**
      * Gets the total advance width for showing the specified
@@ -301,5 +297,31 @@ public class Font {
      * NullPointerException - if str is null
      */
     public int stringWidth(String str);
+
+    /**
+     * Gets the total advance width for showing the specified substring in this
+     *  Font.
+     *  The advance width is the horizontal distance that would be occupied if
+     *  the substring were to be drawn using this Font,
+     *  including inter-character spacing following
+     *  the substring necessary for proper positioning of subsequent text.
+     * 
+     *  The offset and len parameters must
+     *  specify a valid range of characters
+     *  within str. The offset parameter must
+     *  be within the
+     *  range [0..(str.length())], inclusive.
+     *  The len parameter must be a non-negative
+     *  integer such that (offset + len) &lt;= str.length().
+     * 
+     * Parameters:str - the String to be measuredoffset - zero-based index of first character in the substringlen - length of the substring
+     * Returns:the total advance width
+     * Throws:
+     * StringIndexOutOfBoundsException - if offset and
+     *  length specify an
+     *  invalid range
+     * NullPointerException - if str is null
+     */
+    public int substringWidth(String str, int offset, int len);
 
 }

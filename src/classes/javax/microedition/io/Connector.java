@@ -36,8 +36,7 @@ public class Connector {
      * SecurityException - May be thrown if access to the
      *    protocol handler is prohibited.
      */
-    public static Connection open(String name)
-                       throws IOException;
+    public static Connection open(String name) throws IOException;
 
     /**
      * Create and open a Connection.
@@ -53,9 +52,7 @@ public class Connector {
      * SecurityException - May be thrown if access to the
      *    protocol handler is prohibited.
      */
-    public static Connection open(String name,
-                              int mode)
-                       throws IOException;
+    public static Connection open(String name, int mode) throws IOException;
 
     /**
      * Create and open a Connection.
@@ -72,10 +69,7 @@ public class Connector {
      * SecurityException - May be thrown if access to the
      *    protocol handler is prohibited.
      */
-    public static Connection open(String name,
-                              int mode,
-                              boolean timeouts)
-                       throws IOException;
+    public static Connection open(String name, int mode, boolean timeouts) throws IOException;
 
     /**
      * Create and open a connection input stream.
@@ -91,8 +85,7 @@ public class Connector {
      * SecurityException - May be thrown if access to the
      *    protocol handler is prohibited.
      */
-    public static DataInputStream openDataInputStream(String name)
-                                           throws IOException;
+    public static DataInputStream openDataInputStream(String name) throws IOException;
 
     /**
      * Create and open a connection output stream.
@@ -108,8 +101,7 @@ public class Connector {
      * SecurityException - May be thrown if access to the
      *    protocol handler is prohibited.
      */
-    public static DataOutputStream openDataOutputStream(String name)
-                                             throws IOException;
+    public static DataOutputStream openDataOutputStream(String name) throws IOException;
 
     /**
      * Create and open a connection input stream.
@@ -125,7 +117,22 @@ public class Connector {
      * SecurityException - May be thrown if access to the
      *    protocol handler is prohibited.
      */
-    public static InputStream openInputStream(String name)
-                                   throws IOException;
+    public static InputStream openInputStream(String name) throws IOException;
+
+    /**
+     * Create and open a connection output stream.
+     * 
+     * Parameters:name - The URL for the connection.
+     * Returns:An OutputStream.
+     * Throws:
+     * IllegalArgumentException - If a parameter is invalid.
+     * ConnectionNotFoundException - If the target of the
+     *    name cannot be found, or if the requested protocol type
+     *    is not supported.
+     * IOException - If some other kind of I/O error occurs.
+     * SecurityException - May be thrown if access to the
+     *    protocol handler is prohibited.
+     */
+    public static OutputStream openOutputStream(String name) throws IOException;
 
 }

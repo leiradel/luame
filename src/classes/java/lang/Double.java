@@ -46,6 +46,18 @@ public class Double {
     public static final double MIN_VALUE = ;
 
     /**
+     * Constructs a newly allocated Double object that
+     *  represents the primitive double argument.
+     * 
+     * Parameters:value - the value to be represented by the Double.
+     */
+    public Double(double value) {
+        construct(value);
+    }
+
+    private native void construct(double value);
+
+    /**
      * Creates a string representation of the double
      *  argument. All characters mentioned below are ASCII characters.
      * 
@@ -135,8 +147,7 @@ public class Double {
      * NumberFormatException - if the string does not contain a
      *                parsable number.
      */
-    public static Double valueOf(String s)
-                      throws NumberFormatException;
+    public static Double valueOf(String s) throws NumberFormatException;
 
     /**
      * Returns a new double initialized to the value represented by the
@@ -151,8 +162,7 @@ public class Double {
      *   JDK1.2
      * See Also:valueOf(String)
      */
-    public static double parseDouble(String s)
-                          throws NumberFormatException;
+    public static double parseDouble(String s) throws NumberFormatException;
 
     /**
      * Returns true if the specified number is the special Not-a-Number (NaN)
@@ -347,5 +357,42 @@ public class Double {
      * Returns:the bits that represent the floating-point number.
      */
     public static long doubleToLongBits(double value);
+
+    /**
+     * Returns the double-float corresponding to a given bit representation.
+     *  The argument is considered to be a representation of a
+     *  floating-point value according to the IEEE 754 floating-point
+     *  "double precision" bit layout. That floating-point
+     *  value is returned as the result.
+     * 
+     *  If the argument is 0x7ff0000000000000L, the result
+     *  is positive infinity.
+     * 
+     *  If the argument is 0xfff0000000000000L, the result
+     *  is negative infinity.
+     * 
+     *  If the argument is any value in the range
+     *  0x7ff0000000000001L through
+     *  0x7fffffffffffffffL or in the range
+     *  0xfff0000000000001L through
+     *  0xffffffffffffffffL, the result is NaN. All IEEE 754
+     *  NaN values of type double are, in effect, lumped together
+     *  by the Java programming language into a single value called NaN.
+     * 
+     *  In all other cases, let s, e, and m be three
+     *  values that can be computed from the argument:
+     * 
+     *  int s = ((bits >> 63) == 0) ? 1 : -1;
+     *  int e = (int)((bits >> 52) & 0x7ffL);
+     *  long m = (e == 0) ?
+     *                  (bits & 0xfffffffffffffL)
+     *  Then the floating-point result equals the value of the mathematical
+     *  expression s&#183;m&#183;2e-1075.
+     * 
+     * Parameters:bits - any long integer.
+     * Returns:the double floating-point value with the same
+     *           bit pattern.
+     */
+    public static double longBitsToDouble(long bits);
 
 }

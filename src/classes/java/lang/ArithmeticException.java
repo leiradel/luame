@@ -11,4 +11,16 @@ public class ArithmeticException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs an ArithmeticException with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public ArithmeticException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

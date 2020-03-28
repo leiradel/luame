@@ -65,6 +65,18 @@ public class Thread {
     private native void construct(Runnable target);
 
     /**
+     * Allocates a new Thread object with the given
+     *  target and name.
+     * 
+     * Parameters:target - the object whose run method is called.name - the name of the new thread.
+     */
+    public Thread(Runnable target, String name) {
+        construct(target, name);
+    }
+
+    private native void construct(Runnable target, String name);
+
+    /**
      * Returns a reference to the currently executing
      *  Thread object.
      * 
@@ -89,8 +101,7 @@ public class Thread {
      *              the current thread.  The interrupted status of the
      *              current thread is cleared when this exception is thrown.See Also:Object.notify()
      */
-    public static void sleep(long millis)
-                  throws InterruptedException;
+    public static void sleep(long millis) throws InterruptedException;
 
     /**
      * Causes this thread to begin execution; the Java Virtual Machine
@@ -185,7 +196,16 @@ public class Thread {
      *              the current thread.  The interrupted status of the
      *              current thread is cleared when this exception is thrown.
      */
-    public final void join()
-                throws InterruptedException;
+    public final void join() throws InterruptedException;
+
+    /**
+     * Returns a string representation of this thread, including the
+     *  thread's name and priority.
+     * 
+     * Overrides:toString in class Object
+     * 
+     * Returns:a string representation of this thread.
+     */
+    public String toString();
 
 }

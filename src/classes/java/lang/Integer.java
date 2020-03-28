@@ -18,6 +18,18 @@ public class Integer {
     public static final int MAX_VALUE = ;
 
     /**
+     * Constructs a newly allocated Integer object that
+     *  represents the primitive int argument.
+     * 
+     * Parameters:value - the value to be represented by the Integer.
+     */
+    public Integer(int value) {
+        construct(value);
+    }
+
+    private native void construct(int value);
+
+    /**
      * Creates a string representation of the first argument in the
      *  radix specified by the second argument.
      * 
@@ -51,8 +63,7 @@ public class Integer {
      * Returns:a string representation of the argument in the specified radix.See Also:Character.MAX_RADIX,
      * Character.MIN_RADIX
      */
-    public static String toString(int i,
-                              int radix);
+    public static String toString(int i, int radix);
 
     /**
      * Creates a string representation of the integer argument as an
@@ -182,9 +193,7 @@ public class Integer {
      * NumberFormatException - if the string does not contain a
      *                parsable integer.
      */
-    public static int parseInt(String s,
-                           int radix)
-                    throws NumberFormatException;
+    public static int parseInt(String s, int radix) throws NumberFormatException;
 
     /**
      * Parses the string argument as a signed decimal integer. The
@@ -201,8 +210,7 @@ public class Integer {
      * NumberFormatException - if the string does not contain a
      *                parsable integer.
      */
-    public static int parseInt(String s)
-                    throws NumberFormatException;
+    public static int parseInt(String s) throws NumberFormatException;
 
     /**
      * Returns a new Integer object initialized to the value of the
@@ -227,9 +235,7 @@ public class Integer {
      * NumberFormatException - if the String cannot be
      *              parsed as an int.
      */
-    public static Integer valueOf(String s,
-                              int radix)
-                       throws NumberFormatException;
+    public static Integer valueOf(String s, int radix) throws NumberFormatException;
 
     /**
      * Returns a new Integer object initialized to the value of the
@@ -251,8 +257,7 @@ public class Integer {
      * NumberFormatException - if the string cannot be parsed
      *              as an integer.
      */
-    public static Integer valueOf(String s)
-                       throws NumberFormatException;
+    public static Integer valueOf(String s) throws NumberFormatException;
 
     /**
      * Returns the value of this Integer as a byte.
@@ -330,5 +335,20 @@ public class Integer {
      * Hashtable
      */
     public int hashCode();
+
+    /**
+     * Compares this object to the specified object.
+     *  The result is true if and only if the argument is not
+     *  null and is an Integer object that contains
+     *  the same int value as this object.
+     * 
+     * Overrides:equals in class Object
+     * 
+     * Parameters:obj - the object to compare with.
+     * Returns:true if the objects are the same;
+     *           false otherwise.See Also:Boolean.hashCode(),
+     * Hashtable
+     */
+    public boolean equals(Object obj);
 
 }

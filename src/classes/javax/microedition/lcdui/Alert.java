@@ -64,6 +64,40 @@ public class Alert extends Screen {
     private native void construct(String title);
 
     /**
+     * Constructs a new Alert object with the given title,
+     *  content
+     *  string and image, and alert type.
+     *  The layout of the contents is implementation dependent.
+     *  The timeout value of this new alert is the same value that is
+     *  returned by getDefaultTimeout().
+     *  The Image provided may either be mutable or immutable.
+     *  The handling and behavior of specific AlertTypes
+     *  is described in
+     *  AlertType.  null is allowed as the value
+     *  of the alertType
+     *  parameter and indicates that the Alert is not to
+     *  have a specific alert
+     *  type.  DISMISS_COMMAND is the only
+     *  Command present on the new
+     *  Alert.  The CommandListener
+     *  associated with the new Alert is the
+     *  default listener.  Its behavior is described in more detail in
+     *  the section Commands and Listeners.
+     * 
+     * Parameters:title - the title string, or null if there is no titlealertText - the string contents, or null if there
+     *  is no stringalertImage - the image contents, or null if there
+     *  is no imagealertType - the type of the Alert, or
+     *  null
+     *  if the Alert has no
+     *  specific type
+     */
+    public Alert(String title, String alertText, Image alertImage, AlertType alertType) {
+        construct(title, alertText, alertImage, alertType);
+    }
+
+    private native void construct(String title, String alertText, Image alertImage, AlertType alertType);
+
+    /**
      * Gets the default time for showing an Alert.  This
      *  is either a
      *  positive value, which indicates a time in milliseconds, or the special
@@ -254,5 +288,18 @@ public class Alert extends Screen {
      * Parameters:cmd - the command to be removed
      */
     public void removeCommand(Command cmd);
+
+    /**
+     * The same as Displayable.setCommandListener(javax.microedition.lcdui.CommandListener) but with the
+     *  following additional semantics.  If the listener parameter is
+     *  null, the default listener is restored.
+     *  See Commands and Listeners for the definition
+     *  of the behavior of the default listener.
+     * 
+     * Overrides:setCommandListener in class Displayable
+     * 
+     * Parameters:l - the new listener, or null
+     */
+    public void setCommandListener(CommandListener l);
 
 }

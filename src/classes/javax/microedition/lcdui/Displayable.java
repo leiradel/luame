@@ -170,4 +170,51 @@ public class Displayable {
      */
     public int getHeight();
 
+    /**
+     * The implementation calls this method when the available area of the
+     *  Displayable has been changed.
+     *  The &quot;available area&quot; is the area of the display that
+     *  may be occupied by
+     *  the application's contents, such as Items in a
+     *  Form or graphics within
+     *  a Canvas.  It does not include space occupied
+     *  by a title, a ticker,
+     *  command labels, scroll bars, system status area, etc.  A size change
+     *  can occur as a result of the addition, removal, or changed contents of
+     *  any of these display features.
+     * 
+     *   This method is called at least once before the
+     *  Displayable is shown for the first time.
+     *  If the size of a Displayable changes while
+     *  it is visible,
+     *  sizeChanged will be called.  If the size of a
+     *  Displayable
+     *  changes while it is not visible, calls to
+     *  sizeChanged may be deferred.  If the size had changed
+     *  while the Displayable was not visible,
+     *  sizeChanged will be
+     *  called at least once at the time the
+     *  Displayable becomes visible once
+     *  again.
+     * 
+     *  The default implementation of this method in Displayable
+     *  and its
+     *  subclasses defined in this specification must be empty.
+     *  This method is intended solely for being overridden by the
+     *  application. This method is defined on Displayable
+     *  even though applications are prohibited from creating
+     *  direct subclasses of Displayable.
+     *  It is defined here so that applications can override it in
+     *  subclasses of Canvas and Form.
+     *  This is useful for Canvas subclasses to tailor
+     *  their graphics and for Forms to modify
+     *  Item sizes and layout
+     *  directives in order to fit their contents within the the available
+     *  display area.
+     * 
+     * Parameters:w - the new width in pixels of the available areah - the new height in pixels of the available areaSince:
+     *   MIDP 2.0
+     */
+    protected void sizeChanged(int w, int h);
+
 }

@@ -2,6 +2,22 @@ package javax.microedition.midlet;
 
 public class MIDlet {
     /**
+     * Protected constructor for subclasses.
+     *  The application management software is responsible
+     *  for creating MIDlets and creation of MIDlets is restricted.
+     *  MIDlets should not attempt to create other MIDlets.
+     * 
+     * Throws:
+     * SecurityException - unless the application
+     *  management software is creating the MIDlet.
+     */
+    protected MIDlet() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
      * Signals the MIDlet that it has entered the
      *  Active state.
      *  In the Active state the MIDlet may
@@ -27,8 +43,7 @@ public class MIDlet {
      * 		cannot start now but might be able to start at a
      * 		later time.
      */
-    protected abstract void startApp()
-                          throws MIDletStateChangeException;
+    protected abstract void startApp() throws MIDletStateChangeException;
 
     /**
      * Signals the MIDlet to enter
@@ -85,8 +100,7 @@ public class MIDlet {
      *           This exception is ignored if unconditional
      *           is equal to true.
      */
-    protected abstract void destroyApp(boolean unconditional)
-                            throws MIDletStateChangeException;
+    protected abstract void destroyApp(boolean unconditional) throws MIDletStateChangeException;
 
     /**
      * Used by an MIDlet to notify the application
@@ -233,7 +247,20 @@ public class MIDlet {
      *  the platform cannot handle the URL requested.Since:
      *   MIDP 2.0
      */
-    public final boolean platformRequest(String URL)
-                              throws ConnectionNotFoundException;
+    public final boolean platformRequest(String URL) throws ConnectionNotFoundException;
+
+    /**
+     * Get the status of the specified permission.
+     *  If no API on the device defines the specific permission
+     *  requested then it must be reported as denied.
+     *  If the status of the permission is not known because it might
+     *  require a user interaction then it should be reported as unknown.
+     * 
+     * Parameters:permission - to check if denied, allowed, or unknown.
+     * Returns:0 if the permission is denied; 1 if the permission is allowed;
+     *  	-1 if the status is unknownSince:
+     *   MIDP 2.0
+     */
+    public final int checkPermission(String permission);
 
 }

@@ -13,6 +13,19 @@ public class OutputStreamWriter extends Writer {
     private native void construct(OutputStream os);
 
     /**
+     * Create an OutputStreamWriter that uses the named character encoding.
+     * 
+     * Parameters:os - An OutputStreamenc - The name of a supported
+     * Throws:
+     * UnsupportedEncodingException - If the named encoding is not supported
+     */
+    public OutputStreamWriter(OutputStream os, String enc) throws UnsupportedEncodingException {
+        construct(os, enc);
+    }
+
+    private native void construct(OutputStream os, String enc);
+
+    /**
      * Write a single character.
      * 
      * Overrides:write in class Writer
@@ -21,8 +34,7 @@ public class OutputStreamWriter extends Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(int c)
-           throws IOException;
+    public void write(int c) throws IOException;
 
     /**
      * Write a portion of an array of characters.
@@ -33,10 +45,7 @@ public class OutputStreamWriter extends Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(char[] cbuf,
-                  int off,
-                  int len)
-           throws IOException;
+    public void write(char[] cbuf, int off, int len) throws IOException;
 
     /**
      * Write a portion of a string.
@@ -47,10 +56,7 @@ public class OutputStreamWriter extends Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(String str,
-                  int off,
-                  int len)
-           throws IOException;
+    public void write(String str, int off, int len) throws IOException;
 
     /**
      * Flush the stream.
@@ -60,7 +66,16 @@ public class OutputStreamWriter extends Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void flush()
-           throws IOException;
+    public void flush() throws IOException;
+
+    /**
+     * Close the stream.
+     * 
+     * Specified by:close in class Writer
+     * 
+     * Throws:
+     * IOException - If an I/O error occurs
+     */
+    public void close() throws IOException;
 
 }

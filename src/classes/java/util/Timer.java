@@ -2,6 +2,19 @@ package java.util;
 
 public class Timer {
     /**
+     * Creates a new timer.  The associated thread does not run as
+     *  a daemon thread, which may prevent an application from terminating.
+     * 
+     * See Also:Thread,
+     * cancel()
+     */
+    public Timer() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
      * Schedules the specified task for execution after the specified delay.
      * 
      * Parameters:task - task to be scheduled.delay - delay in milliseconds before task is to be executed.
@@ -11,8 +24,7 @@ public class Timer {
      * IllegalStateException - if task was already scheduled or
      *          cancelled, or timer was cancelled.
      */
-    public void schedule(TimerTask task,
-                     long delay);
+    public void schedule(TimerTask task, long delay);
 
     /**
      * Schedules the specified task for execution at the specified time.  If
@@ -24,8 +36,7 @@ public class Timer {
      * IllegalStateException - if task was already scheduled or
      *          cancelled, timer was cancelled, or timer thread terminated.
      */
-    public void schedule(TimerTask task,
-                     Date time);
+    public void schedule(TimerTask task, Date time);
 
     /**
      * Schedules the specified task for repeated fixed-delay execution,
@@ -56,9 +67,7 @@ public class Timer {
      * IllegalStateException - if task was already scheduled or
      *          cancelled, timer was cancelled, or timer thread terminated.
      */
-    public void schedule(TimerTask task,
-                     long delay,
-                     long period);
+    public void schedule(TimerTask task, long delay, long period);
 
     /**
      * Schedules the specified task for repeated fixed-delay execution,
@@ -88,9 +97,7 @@ public class Timer {
      * IllegalStateException - if task was already scheduled or
      *          cancelled, timer was cancelled, or timer thread terminated.
      */
-    public void schedule(TimerTask task,
-                     Date firstTime,
-                     long period);
+    public void schedule(TimerTask task, Date firstTime, long period);
 
     /**
      * Schedules the specified task for repeated fixed-rate execution,
@@ -122,9 +129,7 @@ public class Timer {
      * IllegalStateException - if task was already scheduled or
      *          cancelled, timer was cancelled, or timer thread terminated.
      */
-    public void scheduleAtFixedRate(TimerTask task,
-                                long delay,
-                                long period);
+    public void scheduleAtFixedRate(TimerTask task, long delay, long period);
 
     /**
      * Schedules the specified task for repeated fixed-rate execution,
@@ -155,8 +160,22 @@ public class Timer {
      * IllegalStateException - if task was already scheduled or
      *          cancelled, timer was cancelled, or timer thread terminated.
      */
-    public void scheduleAtFixedRate(TimerTask task,
-                                Date firstTime,
-                                long period);
+    public void scheduleAtFixedRate(TimerTask task, Date firstTime, long period);
+
+    /**
+     * Terminates this timer, discarding any currently scheduled tasks.
+     *  Does not interfere with a currently executing task (if it exists).
+     *  Once a timer has been terminated, its execution thread terminates
+     *  gracefully, and no more tasks may be scheduled on it.
+     * 
+     *  Note that calling this method from within the run method of a
+     *  timer task that was invoked by this timer absolutely guarantees that
+     *  the ongoing task execution is the last task execution that will ever
+     *  be performed by this timer.
+     * 
+     *  This method may be called repeatedly; the second and subsequent
+     *  calls have no effect.
+     */
+    public void cancel();
 
 }

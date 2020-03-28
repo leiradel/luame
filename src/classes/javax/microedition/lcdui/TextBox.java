@@ -2,6 +2,45 @@ package javax.microedition.lcdui;
 
 public class TextBox extends Screen {
     /**
+     * Creates a new TextBox object with the given title
+     *  string, initial
+     *  contents, maximum size in characters, and constraints.
+     *  If the text parameter is null, the
+     *  TextBox is created empty.
+     *  The maxSize parameter must be greater than zero.
+     *  An IllegalArgumentException is thrown if the
+     *  length of the initial contents string exceeds maxSize.
+     *  However,
+     *  the implementation may assign a maximum size smaller than the
+     *  application had requested.  If this occurs, and if the length of the
+     *  contents exceeds the newly assigned maximum size, the contents are
+     *  truncated from the end in order to fit, and no exception is thrown.
+     * 
+     * Parameters:title - the title text to be shown with the displaytext - the initial contents of the text editing area,
+     *  null may be used to
+     *  indicate no initial contentmaxSize - the maximum capacity in characters. The implementation
+     *  may limit
+     *  boundary maximum capacity and the actually assigned capacity may
+     *  me smaller than requested. A defensive application will test the
+     *  actually given
+     *  capacity with getMaxSize().constraints - see input
+     *  constraints
+     * Throws:
+     * IllegalArgumentException - if maxSize is zero or less
+     * IllegalArgumentException - if the constraints
+     *  parameter is invalid
+     * IllegalArgumentException - if text is illegal
+     *  for the specified constraints
+     * IllegalArgumentException - if the length of the string exceeds
+     *  the requested maximum capacity
+     */
+    public TextBox(String title, String text, int maxSize, int constraints) {
+        construct(title, text, maxSize, constraints);
+    }
+
+    private native void construct(String title, String text, int maxSize, int constraints);
+
+    /**
      * Gets the contents of the TextBox as a string value.
      * 
      * Returns:the current contentsSee Also:setString(java.lang.String)
@@ -69,9 +108,7 @@ public class TextBox extends Screen {
      * IllegalArgumentException - if the text would exceed the current
      *  maximum capacitySee Also:getChars(char[])
      */
-    public void setChars(char[] data,
-                     int offset,
-                     int length);
+    public void setChars(char[] data, int offset, int length);
 
     /**
      * Inserts a string into the contents of the TextBox.
@@ -110,8 +147,7 @@ public class TextBox extends Screen {
      *  maximum capacity
      * NullPointerException - if src is null
      */
-    public void insert(String src,
-                   int position);
+    public void insert(String src, int position);
 
     /**
      * Inserts a subrange of an array of characters into the contents of
@@ -142,10 +178,7 @@ public class TextBox extends Screen {
      *  maximum capacity
      * NullPointerException - if data is null
      */
-    public void insert(char[] data,
-                   int offset,
-                   int length,
-                   int position);
+    public void insert(char[] data, int offset, int length, int position);
 
     /**
      * Deletes characters from the TextBox.
@@ -168,8 +201,7 @@ public class TextBox extends Screen {
      *  and length do not
      *  specify a valid range within the contents of the TextBox
      */
-    public void delete(int offset,
-                   int length);
+    public void delete(int offset, int length);
 
     /**
      * Returns the maximum size (number of characters) that can be
@@ -278,5 +310,35 @@ public class TextBox extends Screen {
      * See Also:Displayable.getTitle()
      */
     public void setTitle(String s);
+
+    /**
+     * Sets a ticker for use with this Displayable,
+     *  replacing any
+     *  previous ticker.
+     *  If null, removes the ticker object
+     *  from this Displayable. The same ticker may be shared by
+     *  several Displayable
+     *  objects within an application. This is done by calling
+     *  setTicker()
+     *  with the same Ticker object on several
+     *  different Displayable objects.
+     *  If the Displayable is actually visible on the display,
+     *  the implementation should update
+     *  the display as soon as it is feasible to do so.
+     * 
+     *  The existence of a ticker may affect the size
+     *  of the area available for Displayable's contents.
+     *  If the application adds, removes, or sets the ticker text at runtime,
+     *  this can dynamically change the size of the content area.
+     *  This is most important to be aware of when using the
+     *  Canvas class.
+     * 
+     * Overrides:setTicker in class Displayable
+     * 
+     * Parameters:ticker - the ticker object used on this screenSince:
+     *   MIDP 2.0
+     * See Also:Displayable.getTicker()
+     */
+    public void setTicker(Ticker ticker);
 
 }

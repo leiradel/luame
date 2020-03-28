@@ -11,4 +11,16 @@ public class IllegalArgumentException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs an IllegalArgumentException with the
+     *  specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public IllegalArgumentException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

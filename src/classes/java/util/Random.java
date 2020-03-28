@@ -16,6 +16,22 @@ public class Random {
     private native void construct();
 
     /**
+     * Creates a new random number generator using a single
+     *  long seed:
+     * 
+     *  public Random(long seed) { setSeed(seed); }
+     *  Used by method next to hold
+     *  the state of the pseudorandom number generator.
+     * 
+     * Parameters:seed - the initial seed.See Also:setSeed(long)
+     */
+    public Random(long seed) {
+        construct(seed);
+    }
+
+    private native void construct(long seed);
+
+    /**
      * Sets the seed of this random number generator using a single
      *  long seed. The general contract of setSeed
      *  is that it alters the state of this random number generator
@@ -178,5 +194,44 @@ public class Random {
      *   CLDC 1.1
      */
     public float nextFloat();
+
+    /**
+     * Returns the next pseudorandom, uniformly distributed
+     *  double value between 0.0 and
+     *  1.0 from this random number generator's sequence.
+     *  The general contract of nextDouble is that one
+     *  double value, chosen (approximately) uniformly from the
+     *  range 0.0d (inclusive) to 1.0d (exclusive), is
+     *  pseudorandomly generated and returned. All
+     *  253 possible float
+     *  values of the form m&nbsp;x&nbsp;2-53
+     *  , where m is a positive integer less than
+     *  253, are produced with
+     *  (approximately) equal probability. The method nextDouble is
+     *  implemented by class Random as follows:
+     * 
+     *  public double nextDouble() {
+     *        return (((long)next(26)
+     *  The hedge "approximately" is used in the foregoing description only
+     *  because the next method is only approximately an unbiased
+     *  source of independently chosen bits. If it were a perfect source or
+     *  randomly chosen bits, then the algorithm shown would choose
+     *  double values from the stated range with perfect uniformity.
+     *  [In early versions of Java, the result was incorrectly calculated as:
+     * 
+     *   return (((long)next(27)
+     *  This might seem to be equivalent, if not better, but in fact it
+     *  introduced a large nonuniformity because of the bias in the rounding
+     *  of floating-point numbers: it was three times as likely that the
+     *  low-order bit of the significand would be 0 than that it would be
+     *  1! This nonuniformity probably doesn't matter much in practice, but
+     *  we strive for perfection.]
+     * 
+     * Returns:the next pseudorandom, uniformly distributed
+     *           double value between 0.0 and
+     *           1.0 from this random number generator's sequence.Since:
+     *   CLDC 1.1
+     */
+    public double nextDouble();
 
 }

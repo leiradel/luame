@@ -2,6 +2,15 @@ package javax.microedition.lcdui.game;
 
 public class LayerManager {
     /**
+     * Creates a new LayerManager.
+     */
+    public LayerManager() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
      * Appends a Layer to this LayerManager.  The Layer is appended to the
      *  list of existing Layers such that it has the highest index (i.e. it
      *  is furthest away from the user).  The Layer is first removed
@@ -31,8 +40,7 @@ public class LayerManager {
      *  LayerManagerSee Also:append(Layer),
      * remove(Layer)
      */
-    public void insert(Layer l,
-                   int index);
+    public void insert(Layer l, int index);
 
     /**
      * Gets the Layer with the specified index.
@@ -110,8 +118,28 @@ public class LayerManager {
      * Throws:
      * NullPointerException - if g is nullSee Also:setViewWindow(int, int, int, int)
      */
-    public void paint(Graphics g,
-                  int x,
-                  int y);
+    public void paint(Graphics g, int x, int y);
+
+    /**
+     * Sets the view window on the LayerManager.
+     * 
+     *  The view window specifies the region that the LayerManager draws when
+     *  its paint(javax.microedition.lcdui.Graphics, int, int) method is called.  It allows the developer to
+     *  control the size of the visible region, as well as the location of the
+     *  view window relative to the LayerManager's coordinate system.
+     * 
+     *  The view window stays in effect until it is modified by another call
+     *  to this method.  By default, the view window is located at (0,0) in
+     *  the LayerManager's coordinate system and its width and height are both
+     *  set to Integer.MAX_VALUE.
+     * 
+     * Parameters:x - the horizontal location of the view window relative to the
+     *  LayerManager's originy - the vertical location of the view window relative to the
+     *  LayerManager's originwidth - the width of the view windowheight - the height of the view window
+     * Throws:
+     * IllegalArgumentException - if the width or
+     *  height is less than 0
+     */
+    public void setViewWindow(int x, int y, int width, int height);
 
 }

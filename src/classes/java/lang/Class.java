@@ -37,8 +37,7 @@ public class Class {
      * ClassNotFoundException - if the class could not be found.Since:
      *   JDK1.0
      */
-    public static Class forName(String className)
-                     throws ClassNotFoundException;
+    public static Class forName(String className) throws ClassNotFoundException;
 
     /**
      * Creates a new instance of a class.
@@ -54,9 +53,7 @@ public class Class {
      *                instantiation fails for some other reason.Since:
      *   JDK1.0
      */
-    public Object newInstance()
-                   throws InstantiationException,
-                          IllegalAccessException;
+    public Object newInstance() throws InstantiationException, IllegalAccessException;
 
     /**
      * Determines if the specified Object is assignment-compatible
@@ -170,5 +167,17 @@ public class Class {
      *           represented by this object.
      */
     public String getName();
+
+    /**
+     * Finds a resource with a given name.  This method returns null if no
+     *  resource with this name is found.  The rules for searching
+     *  resources associated with a given class are profile
+     *  specific.
+     * 
+     * Parameters:name - name of the desired resource
+     * Returns:a java.io.InputStream object.Since:
+     *   JDK1.1
+     */
+    public InputStream getResourceAsStream(String name);
 
 }

@@ -11,4 +11,16 @@ public class IllegalMonitorStateException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs an IllegalMonitorStateException with the
+     *  specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public IllegalMonitorStateException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

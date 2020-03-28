@@ -10,4 +10,16 @@ public class NoClassDefFoundError extends Error {
 
     private native void construct();
 
+    /**
+     * Constructs a NoClassDefFoundError with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public NoClassDefFoundError(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

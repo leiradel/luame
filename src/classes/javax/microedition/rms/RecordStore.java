@@ -35,9 +35,7 @@ public class RecordStore {
      * RecordStoreNotFoundException - if the record store
      *  		could not be found
      */
-    public static void deleteRecordStore(String recordStoreName)
-                              throws RecordStoreException,
-                                     RecordStoreNotFoundException;
+    public static void deleteRecordStore(String recordStoreName) throws RecordStoreException, RecordStoreNotFoundException;
 
     /**
      * Open (and possibly create) a record store associated with the
@@ -60,11 +58,7 @@ public class RecordStore {
      * IllegalArgumentException - if
      *           recordStoreName is invalid
      */
-    public static RecordStore openRecordStore(String recordStoreName,
-                                          boolean createIfNecessary)
-                                   throws RecordStoreException,
-                                          RecordStoreFullException,
-                                          RecordStoreNotFoundException;
+    public static RecordStore openRecordStore(String recordStoreName, boolean createIfNecessary) throws RecordStoreException, RecordStoreFullException, RecordStoreNotFoundException;
 
     /**
      * Open (and possibly create) a record store that can be shared
@@ -110,13 +104,7 @@ public class RecordStore {
      *           recordStoreName is invalidSince:
      *   MIDP 2.0
      */
-    public static RecordStore openRecordStore(String recordStoreName,
-                                          boolean createIfNecessary,
-                                          int authmode,
-                                          boolean writable)
-                                   throws RecordStoreException,
-                                          RecordStoreFullException,
-                                          RecordStoreNotFoundException;
+    public static RecordStore openRecordStore(String recordStoreName, boolean createIfNecessary, int authmode, boolean writable) throws RecordStoreException, RecordStoreFullException, RecordStoreNotFoundException;
 
     /**
      * Open a record store associated with the named MIDlet suite.
@@ -164,11 +152,7 @@ public class RecordStore {
      *           invalidSince:
      *   MIDP 2.0
      */
-    public static RecordStore openRecordStore(String recordStoreName,
-                                          String vendorName,
-                                          String suiteName)
-                                   throws RecordStoreException,
-                                          RecordStoreNotFoundException;
+    public static RecordStore openRecordStore(String recordStoreName, String vendorName, String suiteName) throws RecordStoreException, RecordStoreNotFoundException;
 
     /**
      * Changes the access mode for this RecordStore. The authorization
@@ -200,9 +184,7 @@ public class RecordStore {
      * IllegalArgumentException - if authmode is invalidSince:
      *   MIDP 2.0
      */
-    public void setMode(int authmode,
-                    boolean writable)
-             throws RecordStoreException;
+    public void setMode(int authmode, boolean writable) throws RecordStoreException;
 
     /**
      * This method is called when the MIDlet requests to have the
@@ -224,9 +206,7 @@ public class RecordStore {
      * RecordStoreException - if a different record
      * 		store-related exception occurred
      */
-    public void closeRecordStore()
-                      throws RecordStoreNotOpenException,
-                             RecordStoreException;
+    public void closeRecordStore() throws RecordStoreNotOpenException, RecordStoreException;
 
     /**
      * Returns an array of the names of record stores owned by the
@@ -249,8 +229,7 @@ public class RecordStore {
      * Throws:
      * RecordStoreNotOpenException - if the record store is not open
      */
-    public String getName()
-               throws RecordStoreNotOpenException;
+    public String getName() throws RecordStoreNotOpenException;
 
     /**
      * Each time a record store is modified (by
@@ -271,8 +250,7 @@ public class RecordStore {
      * RecordStoreNotOpenException - if the record store is
      *             not open
      */
-    public int getVersion()
-               throws RecordStoreNotOpenException;
+    public int getVersion() throws RecordStoreNotOpenException;
 
     /**
      * Returns the number of records currently in the record store.
@@ -282,8 +260,7 @@ public class RecordStore {
      * RecordStoreNotOpenException - if the record store is
      *           not open
      */
-    public int getNumRecords()
-                  throws RecordStoreNotOpenException;
+    public int getNumRecords() throws RecordStoreNotOpenException;
 
     /**
      * Returns the amount of space, in bytes, that the record store
@@ -296,8 +273,7 @@ public class RecordStore {
      * RecordStoreNotOpenException - if the record store is
      *           not open
      */
-    public int getSize()
-            throws RecordStoreNotOpenException;
+    public int getSize() throws RecordStoreNotOpenException;
 
     /**
      * Returns the amount of additional room (in bytes) available for
@@ -313,8 +289,7 @@ public class RecordStore {
      * RecordStoreNotOpenException - if the record store is
      *           not open
      */
-    public int getSizeAvailable()
-                     throws RecordStoreNotOpenException;
+    public int getSizeAvailable() throws RecordStoreNotOpenException;
 
     /**
      * Returns the last time the record store was modified, in the
@@ -326,8 +301,7 @@ public class RecordStore {
      * RecordStoreNotOpenException - if the record store is
      *           not open
      */
-    public long getLastModified()
-                     throws RecordStoreNotOpenException;
+    public long getLastModified() throws RecordStoreNotOpenException;
 
     /**
      * Adds the specified RecordListener. If the specified listener
@@ -365,9 +339,7 @@ public class RecordStore {
      * RecordStoreException - if a different record
      * 		store-related exception occurred
      */
-    public int getNextRecordID()
-                    throws RecordStoreNotOpenException,
-                           RecordStoreException;
+    public int getNextRecordID() throws RecordStoreNotOpenException, RecordStoreException;
 
     /**
      * Adds a new record to the record store. The recordId for this
@@ -391,12 +363,7 @@ public class RecordStore {
      * SecurityException - if the MIDlet has read-only access
      *  		to the RecordStore
      */
-    public int addRecord(byte[] data,
-                     int offset,
-                     int numBytes)
-              throws RecordStoreNotOpenException,
-                     RecordStoreException,
-                     RecordStoreFullException;
+    public int addRecord(byte[] data, int offset, int numBytes) throws RecordStoreNotOpenException, RecordStoreException, RecordStoreFullException;
 
     /**
      * The record is deleted from the record store. The recordId for
@@ -412,10 +379,7 @@ public class RecordStore {
      * SecurityException - if the MIDlet has read-only access
      *  		to the RecordStore
      */
-    public void deleteRecord(int recordId)
-                  throws RecordStoreNotOpenException,
-                         InvalidRecordIDException,
-                         RecordStoreException;
+    public void deleteRecord(int recordId) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException;
 
     /**
      * Returns the size (in bytes) of the MIDlet data available
@@ -431,10 +395,7 @@ public class RecordStore {
      * RecordStoreException - if a general record store
      *  		exception occurs
      */
-    public int getRecordSize(int recordId)
-                  throws RecordStoreNotOpenException,
-                         InvalidRecordIDException,
-                         RecordStoreException;
+    public int getRecordSize(int recordId) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException;
 
     /**
      * Returns the data stored in the given record.
@@ -451,12 +412,7 @@ public class RecordStore {
      * ArrayIndexOutOfBoundsException - if the record is
      *           larger than the buffer suppliedSee Also:setRecord(int, byte[], int, int)
      */
-    public int getRecord(int recordId,
-                     byte[] buffer,
-                     int offset)
-              throws RecordStoreNotOpenException,
-                     InvalidRecordIDException,
-                     RecordStoreException;
+    public int getRecord(int recordId, byte[] buffer, int offset) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException;
 
     /**
      * Returns a copy of the data stored in the given record.
@@ -471,10 +427,7 @@ public class RecordStore {
      * RecordStoreException - if a general record store
      * 		exception occursSee Also:setRecord(int, byte[], int, int)
      */
-    public byte[] getRecord(int recordId)
-                 throws RecordStoreNotOpenException,
-                        InvalidRecordIDException,
-                        RecordStoreException;
+    public byte[] getRecord(int recordId) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException;
 
     /**
      * Sets the data in the given record to that passed in. After
@@ -496,13 +449,60 @@ public class RecordStore {
      * SecurityException - if the MIDlet has read-only access
      *  		to the RecordStoreSee Also:getRecord(int, byte[], int)
      */
-    public void setRecord(int recordId,
-                      byte[] newData,
-                      int offset,
-                      int numBytes)
-               throws RecordStoreNotOpenException,
-                      InvalidRecordIDException,
-                      RecordStoreException,
-                      RecordStoreFullException;
+    public void setRecord(int recordId, byte[] newData, int offset, int numBytes) throws RecordStoreNotOpenException, InvalidRecordIDException, RecordStoreException, RecordStoreFullException;
+
+    /**
+     * Returns an enumeration for traversing a set of records in the
+     *  record store in an optionally specified order.
+     * 
+     *  The filter, if non-null, will be used to determine what
+     *  subset of the record store records will be used.
+     * 
+     *  The comparator, if non-null, will be used to determine the
+     *  order in which the records are returned.
+     * 
+     *  If both the filter and comparator is null, the enumeration
+     *  will traverse all records in the record store in an undefined
+     *  order. This is the most efficient way to traverse all of the
+     *  records in a record store.  If a filter is used with a null
+     *  comparator, the enumeration will traverse the filtered records
+     *  in an undefined order.
+     * 
+     *  The first call to RecordEnumeration.nextRecord()
+     *  returns the record data from the first record in the sequence.
+     *  Subsequent calls to RecordEnumeration.nextRecord()
+     *  return the next consecutive record's data. To return the record
+     *  data from the previous consecutive from any
+     *  given point in the enumeration, call previousRecord().
+     *  On the other hand, if after creation the first call is to
+     *  previousRecord(), the record data of the last element
+     *  of the enumeration will be returned. Each subsequent call to
+     *  previousRecord() will step backwards through the
+     *  sequence.
+     * 
+     * Parameters:filter - if non-null, will be used to determine what
+     *           subset of the record store records will be usedcomparator - if non-null, will be used to determine the
+     *           order in which the records are returnedkeepUpdated - if true, the enumerator will keep its enumeration
+     *           current with any changes in the records of the record
+     *           store. Use with caution as there are possible
+     *           performance consequences. If false the enumeration
+     *           will not be kept current and may return recordIds for
+     *           records that have been deleted or miss records that
+     *           are added later. It may also return records out of
+     *           order that have been modified after the enumeration
+     *           was built. Note that any changes to records in the
+     *           record store are accurately reflected when the record
+     *           is later retrieved, either directly or through the
+     *           enumeration. The thing that is risked by setting this
+     *           parameter false is the filtering and sorting order of
+     *           the enumeration when records are modified, added, or
+     *           deleted.
+     * Returns:an enumeration for traversing a set of records in the
+     *           record store in an optionally specified order
+     * Throws:
+     * RecordStoreNotOpenException - if the record store is
+     *           not openSee Also:RecordEnumeration.rebuild()
+     */
+    public RecordEnumeration enumerateRecords(RecordFilter filter, RecordComparator comparator, boolean keepUpdated) throws RecordStoreNotOpenException;
 
 }

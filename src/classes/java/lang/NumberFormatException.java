@@ -10,4 +10,16 @@ public class NumberFormatException extends IllegalArgumentException {
 
     private native void construct();
 
+    /**
+     * Constructs a NumberFormatException with the
+     *  specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public NumberFormatException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

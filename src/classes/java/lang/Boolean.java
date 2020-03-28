@@ -14,6 +14,18 @@ public class Boolean {
     public static final Boolean FALSE = ;
 
     /**
+     * Allocates a Boolean object representing the
+     *  value argument.
+     * 
+     * Parameters:value - the value of the Boolean.
+     */
+    public Boolean(boolean value) {
+        construct(value);
+    }
+
+    private native void construct(boolean value);
+
+    /**
      * Returns the value of this Boolean object as a boolean
      *  primitive.
      * 
@@ -44,5 +56,19 @@ public class Boolean {
      * Hashtable
      */
     public int hashCode();
+
+    /**
+     * Returns true if and only if the argument is not
+     *  null and is a Boolean object that
+     *  represents the same boolean value as this object.
+     * 
+     * Overrides:equals in class Object
+     * 
+     * Parameters:obj - the object to compare with.
+     * Returns:true if the Boolean objects represent the
+     *           same value; false otherwise.See Also:hashCode(),
+     * Hashtable
+     */
+    public boolean equals(Object obj);
 
 }

@@ -10,4 +10,16 @@ public class OutOfMemoryError extends VirtualMachineError {
 
     private native void construct();
 
+    /**
+     * Constructs an OutOfMemoryError with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public OutOfMemoryError(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

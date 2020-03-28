@@ -16,6 +16,17 @@ public class Short {
     public static final short MAX_VALUE = ;
 
     /**
+     * Constructs a Short object initialized to the specified short value.
+     * 
+     * Parameters:value - the initial value of the Short
+     */
+    public Short(short value) {
+        construct(value);
+    }
+
+    private native void construct(short value);
+
+    /**
      * Assuming the specified String represents a short, returns
      *  that short's value. Throws an exception if the String cannot
      *  be parsed as a short.  The radix is assumed to be 10.
@@ -26,8 +37,7 @@ public class Short {
      * NumberFormatException - If the string does not
      *                 contain a parsable short.
      */
-    public static short parseShort(String s)
-                        throws NumberFormatException;
+    public static short parseShort(String s) throws NumberFormatException;
 
     /**
      * Assuming the specified String represents a short, returns
@@ -42,9 +52,7 @@ public class Short {
      * NumberFormatException - If the String does not
      *                 contain a parsable short.
      */
-    public static short parseShort(String s,
-                               int radix)
-                        throws NumberFormatException;
+    public static short parseShort(String s, int radix) throws NumberFormatException;
 
     /**
      * Returns the value of this Short as a short.
@@ -71,5 +79,16 @@ public class Short {
      * Hashtable
      */
     public int hashCode();
+
+    /**
+     * Compares this object to the specified object.
+     * 
+     * Overrides:equals in class Object
+     * 
+     * Parameters:obj - the object to compare with
+     * Returns:true if the objects are the same; false otherwise.See Also:Boolean.hashCode(),
+     * Hashtable
+     */
+    public boolean equals(Object obj);
 
 }

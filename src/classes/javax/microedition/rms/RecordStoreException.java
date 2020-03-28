@@ -13,4 +13,14 @@ public class RecordStoreException extends Exception {
 
     private native void construct(String message);
 
+    /**
+     * Constructs a new RecordStoreException with no detail
+     *  message.
+     */
+    public RecordStoreException() {
+        construct();
+    }
+
+    private native void construct();
+
 }

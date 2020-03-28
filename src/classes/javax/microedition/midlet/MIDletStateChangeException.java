@@ -10,4 +10,15 @@ public class MIDletStateChangeException extends Exception {
 
     private native void construct();
 
+    /**
+     * Constructs an exception with the specified detail message.
+     * 
+     * Parameters:s - the detail message
+     */
+    public MIDletStateChangeException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

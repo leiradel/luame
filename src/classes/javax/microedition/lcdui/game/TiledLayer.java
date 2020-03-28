@@ -2,6 +2,49 @@ package javax.microedition.lcdui.game;
 
 public class TiledLayer extends Layer {
     /**
+     * Creates a new TiledLayer.
+     * 
+     *  The TiledLayer's grid will be rows cells high and
+     *  columns cells wide.  All cells in the grid are initially
+     *  empty (i.e. they contain tile index 0).  The contents of the grid may
+     *  be modified through the use of setCell(int, int, int) and fillCells(int, int, int, int, int).
+     * 
+     *  The static tile set for the TiledLayer is created from the specified
+     *  Image with each tile having the dimensions of tileWidth x tileHeight.
+     *  The width of the source image must be an integer multiple of
+     *  the tile width, and the height of the source image must be an integer
+     *  multiple of the tile height; otherwise, an IllegalArgumentException
+     *  is thrown;
+     * 
+     *  The entire static tile set can be changed using
+     *  setStaticTileSet(Image, int, int).
+     *  These methods should be used sparingly since they are both
+     *  memory and time consuming.
+     *  Where possible, animated tiles should be used instead to
+     *  animate tile appearance.
+     * 
+     * Parameters:columns - the width of the TiledLayer,
+     *  expressed as a number of cellsrows - the height of the TiledLayer,
+     *  expressed as a number of cellsimage - the Image to use for creating
+     *   the static tile settileWidth - the width in pixels of a single tiletileHeight - the height in pixels of a single tile
+     * Throws:
+     * NullPointerException - if image is null
+     * IllegalArgumentException - if the number of rows
+     *   or columns is less than 1
+     * IllegalArgumentException - if tileHeight
+     *   or tileWidth is less than 1
+     * IllegalArgumentException - if the image
+     *   width is not an integer multiple of the tileWidth
+     * IllegalArgumentException - if the image
+     *  height is not an integer multiple of the tileHeight
+     */
+    public TiledLayer(int columns, int rows, Image image, int tileWidth, int tileHeight) {
+        construct(columns, rows, image, tileWidth, tileHeight);
+    }
+
+    private native void construct(int columns, int rows, Image image, int tileWidth, int tileHeight);
+
+    /**
      * Creates a new animated tile and returns the index that refers
      *  to the new animated tile.  It is initially associated with
      *  the specified tile index (either a static tile or 0).
@@ -29,8 +72,7 @@ public class TiledLayer extends Layer {
      * IndexOutOfBoundsException - if the animated tile index
      *  is invalidSee Also:getAnimatedTile(int)
      */
-    public void setAnimatedTile(int animatedTileIndex,
-                            int staticTileIndex);
+    public void setAnimatedTile(int animatedTileIndex, int staticTileIndex);
 
     /**
      * Gets the tile referenced by an animated tile.
@@ -61,9 +103,7 @@ public class TiledLayer extends Layer {
      *          TiledLayer gridSee Also:getCell(int, int),
      * fillCells(int, int, int, int, int)
      */
-    public void setCell(int col,
-                    int row,
-                    int tileIndex);
+    public void setCell(int col, int row, int tileIndex);
 
     /**
      * Gets the contents of a cell.
@@ -79,8 +119,7 @@ public class TiledLayer extends Layer {
      *          TiledLayer gridSee Also:setCell(int, int, int),
      * fillCells(int, int, int, int, int)
      */
-    public int getCell(int col,
-                   int row);
+    public int getCell(int col, int row);
 
     /**
      * Fills a region cells with the specific tile.  The cells may be filled
@@ -101,11 +140,7 @@ public class TiledLayer extends Layer {
      *          index tileIndexSee Also:setCell(int, int, int),
      * getCell(int, int)
      */
-    public void fillCells(int col,
-                      int row,
-                      int numCols,
-                      int numRows,
-                      int tileIndex);
+    public void fillCells(int col, int row, int numCols, int numRows, int tileIndex);
 
     /**
      * Gets the width of a single cell, in pixels.
@@ -170,8 +205,31 @@ public class TiledLayer extends Layer {
      * IllegalArgumentException - if the image
      *   height is not an integer  multiple of the tileHeight
      */
-    public void setStaticTileSet(Image image,
-                             int tileWidth,
-                             int tileHeight);
+    public void setStaticTileSet(Image image, int tileWidth, int tileHeight);
+
+    /**
+     * Draws the TiledLayer.
+     * 
+     *  The entire TiledLayer is rendered subject to the clip region of
+     *  the Graphics object.
+     *  The TiledLayer's upper left corner is rendered at the
+     *  TiledLayer's current
+     *  position relative to the origin of the Graphics object.   The current
+     *  position of the TiledLayer's upper-left corner can be retrieved by
+     *  calling Layer.getX() and Layer.getY().
+     *  The appropriate use of a clip region and/or translation allows
+     *  an arbitrary region
+     *  of the TiledLayer to be rendered.
+     * 
+     *  If the TiledLayer's Image is mutable, the TiledLayer is rendered
+     *  using the current contents of the Image.
+     * 
+     * Specified by:paint in class Layer
+     * 
+     * Parameters:g - the graphics object to draw the TiledLayer
+     * Throws:
+     * NullPointerException - if g is null
+     */
+    public final void paint(Graphics g);
 
 }

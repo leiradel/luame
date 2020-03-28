@@ -12,8 +12,7 @@ public class Image {
      * IllegalArgumentException - if either width or
      *  height is zero or less
      */
-    public static Image createImage(int width,
-                                int height);
+    public static Image createImage(int width, int height);
 
     /**
      * Creates an immutable image from a source image.
@@ -60,8 +59,7 @@ public class Image {
      *  the data cannot
      *  be loaded, or the image data cannot be decoded
      */
-    public static Image createImage(String name)
-                         throws IOException;
+    public static Image createImage(String name) throws IOException;
 
     /**
      * Creates an immutable image which is decoded from the data stored in
@@ -99,9 +97,7 @@ public class Image {
      * IllegalArgumentException - if imageData is incorrectly
      *  formatted or otherwise cannot be decoded
      */
-    public static Image createImage(byte[] imageData,
-                                int imageOffset,
-                                int imageLength);
+    public static Image createImage(byte[] imageData, int imageOffset, int imageLength);
 
     /**
      * Creates an immutable image using pixel data from the specified
@@ -168,12 +164,7 @@ public class Image {
      *  is not validSince:
      *   MIDP 2.0
      */
-    public static Image createImage(Image image,
-                                int x,
-                                int y,
-                                int width,
-                                int height,
-                                int transform);
+    public static Image createImage(Image image, int x, int y, int width, int height, int transform);
 
     /**
      * Creates a new Graphics object that renders to this
@@ -249,8 +240,7 @@ public class Image {
      *  cannot be loaded, or if the image data cannot be decodedSince:
      *   MIDP 2.0
      */
-    public static Image createImage(InputStream stream)
-                         throws IOException;
+    public static Image createImage(InputStream stream) throws IOException;
 
     /**
      * Creates an immutable image from a sequence of ARGB values, specified
@@ -298,9 +288,85 @@ public class Image {
      *  less than width&nbsp;*&nbsp;height.Since:
      *   MIDP 2.0
      */
-    public static Image createRGBImage(int[] rgb,
-                                   int width,
-                                   int height,
-                                   boolean processAlpha);
+    public static Image createRGBImage(int[] rgb, int width, int height, boolean processAlpha);
+
+    /**
+     * Obtains ARGB pixel data from the specified region of this image and
+     *  stores it in the provided array of integers.  Each pixel value is
+     *  stored in 0xAARRGGBB format, where the high-order
+     *  byte contains the
+     *  alpha channel and the remaining bytes contain color components for
+     *  red, green and blue, respectively.  The alpha channel specifies the
+     *  opacity of the pixel, where a value of 0x00
+     *  represents a pixel that
+     *  is fully transparent and a value of 0xFF
+     *  represents a fully opaque
+     *  pixel.
+     * 
+     *   The returned values are not guaranteed to be identical to values
+     *  from the original source, such as from
+     *  createRGBImage or from a PNG
+     *  image.  Color values may be resampled to reflect the display
+     *  capabilities of the device (for example, red, green or blue pixels may
+     *  all be represented by the same gray value on a grayscale device).  On
+     *  devices that do not support alpha blending, the alpha value will be
+     *  0xFF for opaque pixels and 0x00 for
+     *  all other pixels (see Alpha Processing for further discussion.)  On devices
+     *  that support alpha blending, alpha channel values may be resampled to
+     *  reflect the number of levels of semitransparency supported.
+     * 
+     *  The scanlength specifies the relative offset within the
+     *  array between the corresponding pixels of consecutive rows.  In order
+     *  to prevent rows of stored pixels from overlapping, the absolute value
+     *  of scanlength must be greater than or equal to
+     *  width.  Negative values of scanlength are
+     *  allowed.  In all cases, this must result in every reference being
+     *  within the bounds of the rgbData array.
+     * 
+     *  Consider P(a,b) to be the value of the pixel
+     *  located at column a and row b of the
+     *  Image, where rows and columns are numbered downward from the
+     *  top starting at zero, and columns are numbered rightward from
+     *  the left starting at zero. This operation can then be defined
+     *  as:
+     * 
+     *     rgbData[offset + (a - x) + (b - y) * scanlength] = P(a, b);
+     * 
+     *  for
+     * 
+     *      x &lt;= a &lt; x + width
+     *      y &lt;= b &lt; y + height
+     * 
+     *  The source rectangle is required to not exceed the bounds of
+     *  the image.  This means:
+     * 
+     *    x &gt;= 0
+     *    y &gt;= 0
+     *    x + width &lt;= image width
+     *    y + height &lt;= image height
+     * 
+     *  If any of these conditions is not met an
+     *  IllegalArgumentException is thrown.  Otherwise, in
+     *  cases where width &lt;= 0 or height &lt;= 0,
+     *  no exception is thrown, and no pixel data is copied to
+     *  rgbData.
+     * 
+     * Parameters:rgbData - an array of integers in which the ARGB pixel data is
+     *  storedoffset - the index into the array where the first ARGB value
+     *  is storedscanlength - the relative offset in the array between
+     *  corresponding pixels in consecutive rows of the regionx - the x-coordinate of the upper left corner of the regiony - the y-coordinate of the upper left corner of the regionwidth - the width of the regionheight - the height of the region
+     * Throws:
+     * ArrayIndexOutOfBoundsException - if the requested operation would
+     *  attempt to access an element in the rgbData array
+     *  whose index is either
+     *  negative or beyond its length (the contents of the array are unchanged)
+     * IllegalArgumentException - if the area being retrieved
+     *  exceeds the bounds of the source image
+     * IllegalArgumentException - if the absolute value of
+     *  scanlength is less than width
+     * NullPointerException - if rgbData is nullSince:
+     *   MIDP 2.0
+     */
+    public void getRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height);
 
 }

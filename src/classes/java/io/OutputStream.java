@@ -1,6 +1,12 @@
 package java.io;
 
 public class OutputStream {
+    public OutputStream() {
+        construct();
+    }
+
+    private native void construct();
+
     /**
      * Writes the specified byte to this output stream. The general
      *  contract for write is that one byte is written
@@ -17,8 +23,7 @@ public class OutputStream {
      *              an IOException may be thrown if the
      *              output stream has been closed.
      */
-    public abstract void write(int b)
-                    throws IOException;
+    public abstract void write(int b) throws IOException;
 
     /**
      * Writes b.length bytes from the specified byte array
@@ -30,8 +35,7 @@ public class OutputStream {
      * Throws:
      * IOException - if an I/O error occurs.See Also:write(byte[], int, int)
      */
-    public void write(byte[] b)
-           throws IOException;
+    public void write(byte[] b) throws IOException;
 
     /**
      * Writes len bytes from the specified byte array
@@ -60,10 +64,7 @@ public class OutputStream {
      *              an IOException is thrown if the output
      *              stream is closed.
      */
-    public void write(byte[] b,
-                  int off,
-                  int len)
-           throws IOException;
+    public void write(byte[] b, int off, int len) throws IOException;
 
     /**
      * Flushes this output stream and forces any buffered output bytes
@@ -78,7 +79,19 @@ public class OutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void flush()
-           throws IOException;
+    public void flush() throws IOException;
+
+    /**
+     * Closes this output stream and releases any system resources
+     *  associated with this stream. The general contract of close
+     *  is that it closes the output stream. A closed stream cannot perform
+     *  output operations and cannot be reopened.
+     * 
+     *  The close method of OutputStream does nothing.
+     * 
+     * Throws:
+     * IOException - if an I/O error occurs.
+     */
+    public void close() throws IOException;
 
 }

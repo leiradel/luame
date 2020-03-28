@@ -13,4 +13,14 @@ public class RecordStoreNotFoundException extends RecordStoreException {
 
     private native void construct(String message);
 
+    /**
+     * Constructs a new RecordStoreNotFoundException
+     *  with no detail message.
+     */
+    public RecordStoreNotFoundException() {
+        construct();
+    }
+
+    private native void construct();
+
 }

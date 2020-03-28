@@ -10,4 +10,16 @@ public class ArrayStoreException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs an ArrayStoreException with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public ArrayStoreException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

@@ -16,6 +16,17 @@ public class Byte {
     public static final byte MAX_VALUE = ;
 
     /**
+     * Constructs a Byte object initialized to the specified byte value.
+     * 
+     * Parameters:value - the initial value of the Byte
+     */
+    public Byte(byte value) {
+        construct(value);
+    }
+
+    private native void construct(byte value);
+
+    /**
      * Assuming the specified String represents a byte, returns
      *  that byte's value. Throws an exception if the String cannot
      *  be parsed as a byte.  The radix is assumed to be 10.
@@ -26,8 +37,7 @@ public class Byte {
      * NumberFormatException - If the string does not
      *                 contain a parsable byte.
      */
-    public static byte parseByte(String s)
-                      throws NumberFormatException;
+    public static byte parseByte(String s) throws NumberFormatException;
 
     /**
      * Assuming the specified String represents a byte, returns
@@ -40,9 +50,7 @@ public class Byte {
      * NumberFormatException - If the String does not
      *                 contain a parsable byte.
      */
-    public static byte parseByte(String s,
-                             int radix)
-                      throws NumberFormatException;
+    public static byte parseByte(String s, int radix) throws NumberFormatException;
 
     /**
      * Returns the value of this Byte as a byte.
@@ -69,5 +77,16 @@ public class Byte {
      * Hashtable
      */
     public int hashCode();
+
+    /**
+     * Compares this object to the specified object.
+     * 
+     * Overrides:equals in class Object
+     * 
+     * Parameters:obj - the object to compare with
+     * Returns:true if the objects are the same; false otherwise.See Also:Boolean.hashCode(),
+     * Hashtable
+     */
+    public boolean equals(Object obj);
 
 }

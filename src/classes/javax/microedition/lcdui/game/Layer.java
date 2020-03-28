@@ -10,8 +10,7 @@ public class Layer {
      * getX(),
      * getY()
      */
-    public void setPosition(int x,
-                        int y);
+    public void setPosition(int x, int y);
 
     /**
      * Moves this Layer by the specified horizontal and vertical distances.
@@ -26,8 +25,7 @@ public class Layer {
      * getX(),
      * getY()
      */
-    public void move(int dx,
-                 int dy);
+    public void move(int dx, int dy);
 
     /**
      * Gets the horizontal position of this Layer's upper-left corner
@@ -80,5 +78,26 @@ public class Layer {
      *  false if it is invisible.See Also:setVisible(boolean)
      */
     public final boolean isVisible();
+
+    /**
+     * Paints this Layer if it is visible.  The upper-left corner of the Layer
+     *  is rendered at it's current (x,y) position relative to the origin of
+     *  the provided Graphics object.  Applications may make use of Graphics
+     *  clipping and translation to control where the Layer is rendered and to
+     *  limit the region that is rendered.
+     * 
+     *  Implementations of this method are responsible for checking if this
+     *  Layer is visible; this method does nothing if the Layer is not
+     *  visible.
+     * 
+     *  The attributes of the Graphics object (clip region, translation,
+     *  drawing color, etc.) are not modified as a result of calling this
+     *  method.
+     * 
+     * Parameters:g - the graphics object for rendering the Layer
+     * Throws:
+     * NullPointerException - if g is null
+     */
+    public abstract void paint(Graphics g);
 
 }

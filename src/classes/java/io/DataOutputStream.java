@@ -7,6 +7,19 @@ public class DataOutputStream {
     protected OutputStream out = ;
 
     /**
+     * Creates a new data output stream to write data to the specified
+     *  underlying output stream.
+     * 
+     * Parameters:out - the underlying output stream, to be saved for later
+     *                 use.
+     */
+    public DataOutputStream(OutputStream out) {
+        construct(out);
+    }
+
+    private native void construct(OutputStream out);
+
+    /**
      * Writes the specified byte (the low eight bits of the argument
      *  b) to the underlying output stream.
      * 
@@ -18,8 +31,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void write(int b)
-           throws IOException;
+    public void write(int b) throws IOException;
 
     /**
      * Writes len bytes from the specified byte array
@@ -31,10 +43,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void write(byte[] b,
-                  int off,
-                  int len)
-           throws IOException;
+    public void write(byte[] b, int off, int len) throws IOException;
 
     /**
      * Flushes this data output stream. This forces any buffered output
@@ -48,8 +57,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void flush()
-           throws IOException;
+    public void flush() throws IOException;
 
     /**
      * Closes this output stream and releases any system resources
@@ -64,8 +72,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void close()
-           throws IOException;
+    public void close() throws IOException;
 
     /**
      * Writes a boolean to the underlying output stream as
@@ -79,8 +86,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final void writeBoolean(boolean v)
-                        throws IOException;
+    public final void writeBoolean(boolean v) throws IOException;
 
     /**
      * Writes out a byte to the underlying output stream as
@@ -92,8 +98,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final void writeByte(int v)
-                     throws IOException;
+    public final void writeByte(int v) throws IOException;
 
     /**
      * Writes a short to the underlying output stream as two
@@ -105,8 +110,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final void writeShort(int v)
-                      throws IOException;
+    public final void writeShort(int v) throws IOException;
 
     /**
      * Writes a char to the underlying output stream as a
@@ -118,8 +122,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final void writeChar(int v)
-                     throws IOException;
+    public final void writeChar(int v) throws IOException;
 
     /**
      * Writes an int to the underlying output stream as four
@@ -131,8 +134,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final void writeInt(int v)
-                    throws IOException;
+    public final void writeInt(int v) throws IOException;
 
     /**
      * Writes a long to the underlying output stream as eight
@@ -144,8 +146,7 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final void writeLong(long v)
-                     throws IOException;
+    public final void writeLong(long v) throws IOException;
 
     /**
      * Converts the float argument to an int using the
@@ -161,8 +162,7 @@ public class DataOutputStream {
      *   CLDC 1.1
      * See Also:Float.floatToIntBits(float)
      */
-    public final void writeFloat(float v)
-                      throws IOException;
+    public final void writeFloat(float v) throws IOException;
 
     /**
      * Converts the double argument to a long using the
@@ -178,8 +178,7 @@ public class DataOutputStream {
      *   CLDC 1.1
      * See Also:Double.doubleToLongBits(double)
      */
-    public final void writeDouble(double v)
-                       throws IOException;
+    public final void writeDouble(double v) throws IOException;
 
     /**
      * Writes a string to the underlying output stream as a sequence of
@@ -192,7 +191,25 @@ public class DataOutputStream {
      * Throws:
      * IOException - if an I/O error occurs.See Also:writeChar(int)
      */
-    public final void writeChars(String s)
-                      throws IOException;
+    public final void writeChars(String s) throws IOException;
+
+    /**
+     * Writes a string to the underlying output stream using UTF-8
+     *  encoding in a machine-independent manner.
+     * 
+     *  First, two bytes are written to the output stream as if by the
+     *  writeShort method giving the number of bytes to
+     *  follow. This value is the number of bytes actually written out,
+     *  not the length of the string. Following the length, each character
+     *  of the string is output, in sequence, using the UTF-8 encoding
+     *  for the character.
+     * 
+     * Specified by:writeUTF in interface DataOutput
+     * 
+     * Parameters:str - a string to be written.
+     * Throws:
+     * IOException - if an I/O error occurs.
+     */
+    public final void writeUTF(String str) throws IOException;
 
 }

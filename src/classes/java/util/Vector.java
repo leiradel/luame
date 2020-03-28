@@ -39,13 +39,11 @@ public class Vector {
      * IllegalArgumentException - if the specified initial capacity
      *             is negative
      */
-    public Vector(int initialCapacity,
-              int capacityIncrement) {
+    public Vector(int initialCapacity, int capacityIncrement) {
         construct(initialCapacity, capacityIncrement);
     }
 
-    private native void construct(int initialCapacity,
-              int capacityIncrement);
+    private native void construct(int initialCapacity, int capacityIncrement);
 
     /**
      * Constructs an empty vector with the specified initial capacity.
@@ -58,6 +56,18 @@ public class Vector {
     }
 
     private native void construct(int initialCapacity);
+
+    /**
+     * Constructs an empty vector.
+     * 
+     * Since:
+     *   JDK1.0
+     */
+    public Vector() {
+        construct();
+    }
+
+    private native void construct();
 
     /**
      * Copies the components of this vector into the specified array.
@@ -169,8 +179,7 @@ public class Vector {
      *   JDK1.0
      * See Also:Object.equals(java.lang.Object)
      */
-    public int indexOf(Object elem,
-                   int index);
+    public int indexOf(Object elem, int index);
 
     /**
      * Returns the index of the last occurrence of the specified object in
@@ -196,8 +205,7 @@ public class Vector {
      *              than or equal to the current size of this vector.Since:
      *   JDK1.0
      */
-    public int lastIndexOf(Object elem,
-                       int index);
+    public int lastIndexOf(Object elem, int index);
 
     /**
      * Returns the component at the specified index.
@@ -246,8 +254,7 @@ public class Vector {
      *   JDK1.0
      * See Also:size()
      */
-    public void setElementAt(Object obj,
-                         int index);
+    public void setElementAt(Object obj, int index);
 
     /**
      * Deletes the component at the specified index. Each component in
@@ -282,8 +289,7 @@ public class Vector {
      *   JDK1.0
      * See Also:size()
      */
-    public void insertElementAt(Object obj,
-                            int index);
+    public void insertElementAt(Object obj, int index);
 
     /**
      * Adds the specified component to the end of this vector,
@@ -315,5 +321,15 @@ public class Vector {
      *   JDK1.0
      */
     public void removeAllElements();
+
+    /**
+     * Returns a string representation of this vector.
+     * 
+     * Overrides:toString in class Object
+     * 
+     * Returns:a string representation of this vector.Since:
+     *   JDK1.0
+     */
+    public String toString();
 
 }

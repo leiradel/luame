@@ -22,6 +22,20 @@ public class ByteArrayOutputStream extends OutputStream {
     private native void construct();
 
     /**
+     * Creates a new byte array output stream, with a buffer capacity of
+     *  the specified size, in bytes.
+     * 
+     * Parameters:size - the initial size.
+     * Throws:
+     * IllegalArgumentException - if size is negative.
+     */
+    public ByteArrayOutputStream(int size) {
+        construct(size);
+    }
+
+    private native void construct(int size);
+
+    /**
      * Writes the specified byte to this byte array output stream.
      * 
      * Specified by:write in class OutputStream
@@ -38,9 +52,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * 
      * Parameters:b - the data.off - the start offset in the data.len - the number of bytes to write.
      */
-    public void write(byte[] b,
-                  int off,
-                  int len);
+    public void write(byte[] b, int off, int len);
 
     /**
      * Resets the count field of this byte array output
@@ -79,5 +91,17 @@ public class ByteArrayOutputStream extends OutputStream {
      *   JDK1.1
      */
     public String toString();
+
+    /**
+     * Closes this output stream and releases any system resources
+     *  associated with this stream. A closed stream cannot perform
+     *  output operations and cannot be reopened.
+     * 
+     * Overrides:close in class OutputStream
+     * 
+     * Throws:
+     * IOException - if an I/O error occurs.
+     */
+    public void close() throws IOException;
 
 }

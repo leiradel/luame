@@ -78,6 +78,40 @@ public class GameCanvas extends Canvas {
     public static final int GAME_D_PRESSED = ;
 
     /**
+     * Creates a new instance of a GameCanvas.  A new buffer is also created
+     *  for the GameCanvas and is initially filled with white pixels.
+     * 
+     *  If the developer only needs to query key status using the getKeyStates
+     *  method, the regular key event mechanism can be suppressed for game keys
+     *  while this GameCanvas is shown.  If not needed by the application, the
+     *  suppression of key events may improve performance by eliminating
+     *  unnecessary system calls to keyPressed, keyRepeated and keyReleased
+     *  methods.
+     * 
+     *  If requested, key event suppression for a given GameCanvas is started
+     *  when it is shown (i.e. when showNotify is called) and stopped when it
+     *  is hidden (i.e. when hideNotify is called).  Since the showing and
+     *  hiding of screens is serialized with the event queue, this arrangement
+     *  ensures that the suppression effects only those key events intended for
+     *  the corresponding GameCanvas.  Thus, if key events are being generated
+     *  while another screen is still shown, those key events will continue to
+     *  be queued and dispatched until that screen is hidden and the GameCanvas
+     *  has replaced it.
+     * 
+     *  Note that key events can be suppressed only for the defined game keys
+     *  (UP, DOWN, FIRE, etc.); key events are always generated for all other
+     *  keys.
+     * 
+     * Parameters:suppressKeyEvents - true to suppress the regular
+     *  key event mechanism for game keys, otherwise false.
+     */
+    protected GameCanvas(boolean suppressKeyEvents) {
+        construct(suppressKeyEvents);
+    }
+
+    private native void construct(boolean suppressKeyEvents);
+
+    /**
      * Obtains the Graphics object for rendering a GameCanvas.  The returned
      *  Graphics object renders to the off-screen buffer belonging to this
      *  GameCanvas.
@@ -194,9 +228,22 @@ public class GameCanvas extends Canvas {
      * 
      * Parameters:x - the left edge of the region to be flushedy - the top edge of the region to be flushedwidth - the width of the region to be flushedheight - the height of the region to be flushedSee Also:flushGraphics()
      */
-    public void flushGraphics(int x,
-                          int y,
-                          int width,
-                          int height);
+    public void flushGraphics(int x, int y, int width, int height);
+
+    /**
+     * Flushes the off-screen buffer to the display.  The size of the flushed
+     *  area is equal to the size of the GameCanvas.  The contents
+     *  of the  off-screen buffer are not changed as a result of the flush
+     *  operation.  This method does not return until the flush has been
+     *  completed, so the app may immediately begin to render the next frame
+     *  to the same buffer once this method returns.
+     * 
+     *  This method does nothing and returns immediately if the GameCanvas is
+     *  not currently shown or the flush request cannot be honored because the
+     *  system is busy.
+     * 
+     * See Also:flushGraphics(int,int,int,int)
+     */
+    public void flushGraphics();
 
 }

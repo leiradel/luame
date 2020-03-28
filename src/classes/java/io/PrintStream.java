@@ -2,6 +2,18 @@ package java.io;
 
 public class PrintStream extends OutputStream {
     /**
+     * Create a new print stream.  This stream will not flush automatically.
+     * 
+     * Parameters:out - The output stream to which values and objects will be
+     *               printed
+     */
+    public PrintStream(OutputStream out) {
+        construct(out);
+    }
+
+    private native void construct(OutputStream out);
+
+    /**
      * Flush the stream.  This is done by writing any buffered output bytes to
      *  the underlying output stream and then flushing that stream.
      * 
@@ -69,9 +81,7 @@ public class PrintStream extends OutputStream {
      * 
      * Parameters:buf - A byte arrayoff - Offset from which to start taking byteslen - Number of bytes to write
      */
-    public void write(byte[] buf,
-                  int off,
-                  int len);
+    public void write(byte[] buf, int off, int len);
 
     /**
      * Print a boolean value.  The string produced by String.valueOf(boolean) is translated into bytes
@@ -253,5 +263,14 @@ public class PrintStream extends OutputStream {
      * Parameters:x - The String to be printed.
      */
     public void println(String x);
+
+    /**
+     * Print an Object and then terminate the line.  This method behaves as
+     *  though it invokes print(Object) and then
+     *  println().
+     * 
+     * Parameters:x - The Object to be printed.
+     */
+    public void println(Object x);
 
 }

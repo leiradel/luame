@@ -289,6 +289,17 @@ public class Calendar {
     protected long time = ;
 
     /**
+     * Constructs a Calendar with the default time zone.
+     * 
+     * See Also:TimeZone.getDefault()
+     */
+    protected Calendar() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
      * Gets this Calendar's current time.
      * 
      * Returns:the current time.See Also:setTime(java.util.Date)
@@ -357,8 +368,7 @@ public class Calendar {
      * ArrayIndexOutOfBoundsException - if an illegal field
      *  parameter is received.
      */
-    public final void set(int field,
-                      int value);
+    public final void set(int field, int value);
 
     /**
      * Compares this calendar to the specified object.
@@ -418,5 +428,12 @@ public class Calendar {
      *  a new time that is set for the calendar.
      */
     protected abstract void computeFields();
+
+    /**
+     * Converts the current field values in fields[]
+     *  to the millisecond time value
+     *  time.
+     */
+    protected abstract void computeTime();
 
 }

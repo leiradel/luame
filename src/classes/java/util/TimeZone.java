@@ -1,6 +1,12 @@
 package java.util;
 
 public class TimeZone {
+    public TimeZone() {
+        construct();
+    }
+
+    private native void construct();
+
     /**
      * Gets offset, for current date, modified in case of
      *  daylight savings. This is the offset to add *to* GMT to get local time.
@@ -17,12 +23,7 @@ public class TimeZone {
      * IllegalArgumentException - the era, month, day,
      *  dayOfWeek, or millis parameters are out of range
      */
-    public abstract int getOffset(int era,
-                              int year,
-                              int month,
-                              int day,
-                              int dayOfWeek,
-                              int millis);
+    public abstract int getOffset(int era, int year, int month, int day, int dayOfWeek, int millis);
 
     /**
      * Gets the GMT offset for this time zone.
@@ -64,5 +65,12 @@ public class TimeZone {
      * Returns:a default TimeZone.
      */
     public static TimeZone getDefault();
+
+    /**
+     * Gets all the available IDs supported.
+     * 
+     * Returns:an array of IDs.
+     */
+    public static String[] getAvailableIDs();
 
 }

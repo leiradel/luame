@@ -119,15 +119,28 @@ public class Sprite extends Layer {
      * IllegalArgumentException - if the image
      *  height is not an integer multiple of the frameHeight
      */
-    public Sprite(Image image,
-              int frameWidth,
-              int frameHeight) {
+    public Sprite(Image image, int frameWidth, int frameHeight) {
         construct(image, frameWidth, frameHeight);
     }
 
-    private native void construct(Image image,
-              int frameWidth,
-              int frameHeight);
+    private native void construct(Image image, int frameWidth, int frameHeight);
+
+    /**
+     * Creates a new Sprite from another Sprite.
+     * 
+     *  All instance attributes (raw frames, position, frame sequence, current
+     *  frame, reference point, collision rectangle, transform, and visibility)
+     *  of the source Sprite are duplicated in the new Sprite.
+     * 
+     * Parameters:s - the Sprite to create a copy of
+     * Throws:
+     * NullPointerException - if s is null
+     */
+    public Sprite(Sprite s) {
+        construct(s);
+    }
+
+    private native void construct(Sprite s);
 
     /**
      * Defines the reference pixel for this Sprite.  The pixel is
@@ -157,8 +170,7 @@ public class Sprite extends Layer {
      * getRefPixelX(),
      * getRefPixelY()
      */
-    public void defineReferencePixel(int x,
-                                 int y);
+    public void defineReferencePixel(int x, int y);
 
     /**
      * Sets this Sprite's position such that its reference pixel is located
@@ -168,8 +180,7 @@ public class Sprite extends Layer {
      * getRefPixelX(),
      * getRefPixelY()
      */
-    public void setRefPixelPosition(int x,
-                                int y);
+    public void setRefPixelPosition(int x, int y);
 
     /**
      * Gets the horizontal position of this Sprite's reference pixel
@@ -373,9 +384,7 @@ public class Sprite extends Layer {
      * IllegalArgumentException - if the image height is not an integer
      *  multiple of the frameHeight
      */
-    public void setImage(Image img,
-                     int frameWidth,
-                     int frameHeight);
+    public void setImage(Image img, int frameWidth, int frameHeight);
 
     /**
      * Defines the Sprite's bounding rectangle that is used for collision
@@ -398,10 +407,7 @@ public class Sprite extends Layer {
      *  width or height is
      *  less than 0
      */
-    public void defineCollisionRectangle(int x,
-                                     int y,
-                                     int width,
-                                     int height);
+    public void defineCollisionRectangle(int x, int y, int width, int height);
 
     /**
      * Sets the transform for this Sprite.  Transforms can be
@@ -469,8 +475,7 @@ public class Sprite extends Layer {
      * NullPointerException - if Sprite s is
      *  null
      */
-    public final boolean collidesWith(Sprite s,
-                                  boolean pixelLevel);
+    public final boolean collidesWith(Sprite s, boolean pixelLevel);
 
     /**
      * Checks for a collision between this Sprite and the specified
@@ -498,7 +503,36 @@ public class Sprite extends Layer {
      * Throws:
      * NullPointerException - if t is null
      */
-    public final boolean collidesWith(TiledLayer t,
-                                  boolean pixelLevel);
+    public final boolean collidesWith(TiledLayer t, boolean pixelLevel);
+
+    /**
+     * Checks for a collision between this Sprite and the specified Image
+     *  with its upper left corner at the specified location.  If pixel-level
+     *  detection is used, a collision is detected only if opaque pixels
+     *  collide.  That is, an opaque pixel in the Sprite would have to collide
+     *  with an opaque  pixel in Image for a collision to be detected.  Only
+     *  those pixels within the Sprite's collision rectangle are checked.
+     * 
+     *  If pixel-level detection is not used, this method simply checks if the
+     *  Sprite's collision rectangle intersects with the Image's bounds.
+     * 
+     *  Any transform applied to the Sprite is automatically accounted for.
+     * 
+     *  The Sprite must be visible in order for a collision to be
+     *  detected.
+     * 
+     * Parameters:image - the Image to test for collisionx - the horizontal location of the Image's
+     *  upper left cornery - the vertical location of the Image's
+     *  upper left cornerpixelLevel - true to test for collision on a
+     *  pixel-by-pixel basis, false to test using simple
+     *  bounds checking
+     * Returns:true if this Sprite has
+     *  collided with the Image, otherwise
+     *  false
+     * Throws:
+     * NullPointerException - if image is
+     *  null
+     */
+    public final boolean collidesWith(Image image, int x, int y, boolean pixelLevel);
 
 }

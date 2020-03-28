@@ -41,13 +41,59 @@ public class List {
      *  IMPLICIT,
      *  EXCLUSIVE, or MULTIPLESee Also:Choice
      */
-    public List(String title,
-            int listType) {
+    public List(String title, int listType) {
         construct(title, listType);
     }
 
-    private native void construct(String title,
-            int listType);
+    private native void construct(String title, int listType);
+
+    /**
+     * Creates a new List, specifying its title, the type
+     *  of the List, and
+     *  an array of Strings and Images to be
+     *  used as its initial contents.
+     * 
+     *  The stringElements array must be non-null and
+     *  every array element
+     *  must also be non-null.  The length of the
+     *  stringElements array
+     *  determines the number of elements in the List.
+     *  The imageElements array
+     *  may be null to indicate that the List
+     *  elements have no images.  If the
+     *  imageElements array is non-null, it must be the
+     *  same length as the
+     *  stringElements array.  Individual elements of the
+     *  imageElements array
+     *  may be null in order to indicate the absence of an
+     *  image for the
+     *  corresponding List element. Non-null elements of the
+     *  imageElements array may refer to mutable or
+     *  immutable images.
+     * 
+     * Parameters:title - the screen's title (see Displayable)listType - one of IMPLICIT, EXCLUSIVE,
+     *  or MULTIPLEstringElements - set of strings specifying the string parts of the
+     *  List elementsimageElements - set of images specifying the image parts of
+     *  the List elements
+     * Throws:
+     * NullPointerException - if stringElements is
+     *  null
+     * NullPointerException - if the stringElements
+     *  array contains any null elements
+     * IllegalArgumentException - if the imageElements
+     *  array is non-null
+     *  and has a different length from the stringElements array
+     * IllegalArgumentException - if listType is not one
+     *  of IMPLICIT,
+     *  EXCLUSIVE, or MULTIPLESee Also:Choice.EXCLUSIVE,
+     * Choice.MULTIPLE,
+     * Choice.IMPLICIT
+     */
+    public List(String title, int listType, String[] stringElements, Image[] imageElements) {
+        construct(title, listType, stringElements, imageElements);
+    }
+
+    private native void construct(String title, int listType, String[] stringElements, Image[] imageElements);
 
     /**
      * Sets a ticker for use with this Displayable,
@@ -152,8 +198,7 @@ public class List {
      * NullPointerException - if stringPart is
      *  null
      */
-    public int append(String stringPart,
-                  Image imagePart);
+    public int append(String stringPart, Image imagePart);
 
     /**
      * Inserts an element into the List just prior to
@@ -168,9 +213,7 @@ public class List {
      * NullPointerException - if stringPart is
      *  null
      */
-    public void insert(int elementNum,
-                   String stringPart,
-                   Image imagePart);
+    public void insert(int elementNum, String stringPart, Image imagePart);
 
     /**
      * Deletes the element referenced by elementNum.
@@ -204,9 +247,7 @@ public class List {
      * NullPointerException - if stringPart is
      *  null
      */
-    public void set(int elementNum,
-                String stringPart,
-                Image imagePart);
+    public void set(int elementNum, String stringPart, Image imagePart);
 
     /**
      * Gets a boolean value indicating whether this element is selected.
@@ -259,8 +300,7 @@ public class List {
      * Throws:
      * IndexOutOfBoundsException - if elementNum is invalidSee Also:getSelectedIndex()
      */
-    public void setSelectedIndex(int elementNum,
-                             boolean selected);
+    public void setSelectedIndex(int elementNum, boolean selected);
 
     /**
      * Sets the selected state of all elements of the List.
@@ -414,7 +454,29 @@ public class List {
      *   MIDP 2.0
      * See Also:getFont(int)
      */
-    public void setFont(int elementNum,
-                    Font font);
+    public void setFont(int elementNum, Font font);
+
+    /**
+     * Gets the application's preferred font for
+     *  rendering the specified element of this Choice. The
+     *  value returned is the font that had been set by the application,
+     *  even if that value had been disregarded by the implementation.
+     *  If no font had been set by the application, or if the application
+     *  explicitly set the font to null, the value is the default
+     *  font chosen by the implementation.
+     * 
+     *   The elementNum parameter must be within the range
+     *  [0..size()-1], inclusive.
+     * 
+     * Specified by:getFont in interface Choice
+     * 
+     * Parameters:elementNum - the index of the element, starting from zero
+     * Returns:the preferred font to use to render the element
+     * Throws:
+     * IndexOutOfBoundsException - if elementNum is invalidSince:
+     *   MIDP 2.0
+     * See Also:setFont(int elementNum, Font font)
+     */
+    public Font getFont(int elementNum);
 
 }

@@ -383,8 +383,7 @@ public class Display {
      *  is an AlertSee Also:Alert,
      * getCurrent()
      */
-    public void setCurrent(Alert alert,
-                       Displayable nextDisplayable);
+    public void setCurrent(Alert alert, Displayable nextDisplayable);
 
     /**
      * Requests that the Displayable that contains this
@@ -601,5 +600,21 @@ public class Display {
      *   MIDP 2.0
      */
     public int getBestImageWidth(int imageType);
+
+    /**
+     * Returns the best image height for a given image type.
+     *  The image type must be one of
+     *  LIST_ELEMENT,
+     *  CHOICE_GROUP_ELEMENT, or
+     *  ALERT.
+     * 
+     * Parameters:imageType - the image type
+     * Returns:the best image height for the image type, may be zero if
+     *  there is no best size; must not be negative
+     * Throws:
+     * IllegalArgumentException - if imageType is illegalSince:
+     *   MIDP 2.0
+     */
+    public int getBestImageHeight(int imageType);
 
 }

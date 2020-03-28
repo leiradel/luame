@@ -43,4 +43,35 @@ public class AlertType {
      */
     public static final AlertType CONFIRMATION = ;
 
+    /**
+     * Protected constructor for subclasses.
+     */
+    protected AlertType() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
+     * Alert the user by playing the sound for this
+     *  AlertType.
+     *  The AlertType instance is used as a hint by the device
+     *  to generate an appropriate sound.  Instances other than
+     *  those predefined above may be ignored.
+     *  The actual sound made by the device,
+     *  if any, is determined by the device. The device may
+     *  ignore the request, use the same sound for
+     *  several AlertTypes or use any other means
+     *  suitable to alert
+     *  the user.
+     * 
+     * Parameters:display - to which the AlertType's sound
+     *  should be played.
+     * Returns:true if the user was alerted,
+     *  false otherwise.
+     * Throws:
+     * NullPointerException - if display is null
+     */
+    public boolean playSound(Display display);
+
 }

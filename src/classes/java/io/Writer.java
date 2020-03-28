@@ -21,6 +21,18 @@ public class Writer {
     private native void construct();
 
     /**
+     * Create a new character-stream writer whose critical sections will
+     *  synchronize on the given object.
+     * 
+     * Parameters:lock - Object to synchronize on.
+     */
+    protected Writer(Object lock) {
+        construct(lock);
+    }
+
+    private native void construct(Object lock);
+
+    /**
      * Write a single character.  The character to be written is contained in
      *  the 16 low-order bits of the given integer value; the 16 high-order bits
      *  are ignored.
@@ -32,8 +44,7 @@ public class Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(int c)
-           throws IOException;
+    public void write(int c) throws IOException;
 
     /**
      * Write an array of characters.
@@ -42,8 +53,7 @@ public class Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(char[] cbuf)
-           throws IOException;
+    public void write(char[] cbuf) throws IOException;
 
     /**
      * Write a portion of an array of characters.
@@ -52,10 +62,7 @@ public class Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public abstract void write(char[] cbuf,
-                           int off,
-                           int len)
-                    throws IOException;
+    public abstract void write(char[] cbuf, int off, int len) throws IOException;
 
     /**
      * Write a string.
@@ -64,8 +71,7 @@ public class Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(String str)
-           throws IOException;
+    public void write(String str) throws IOException;
 
     /**
      * Write a portion of a string.
@@ -74,10 +80,7 @@ public class Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void write(String str,
-                  int off,
-                  int len)
-           throws IOException;
+    public void write(String str, int off, int len) throws IOException;
 
     /**
      * Flush the stream.  If the stream has saved any characters from the
@@ -89,7 +92,16 @@ public class Writer {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public abstract void flush()
-                    throws IOException;
+    public abstract void flush() throws IOException;
+
+    /**
+     * Close the stream, flushing it first.  Once a stream has been closed,
+     *  further write() or flush() invocations will cause an IOException to be
+     *  thrown.  Closing a previously-closed stream, however, has no effect.
+     * 
+     * Throws:
+     * IOException - If an I/O error occurs
+     */
+    public abstract void close() throws IOException;
 
 }

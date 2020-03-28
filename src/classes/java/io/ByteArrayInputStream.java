@@ -63,6 +63,30 @@ public class ByteArrayInputStream extends InputStream {
     private native void construct(byte[] buf);
 
     /**
+     * Creates ByteArrayInputStream
+     *  that uses buf as its
+     *  buffer array. The initial value of pos
+     *  is offset and the initial value
+     *  of count is offset+length.
+     *  The buffer array is not copied.
+     * 
+     *  Note that if bytes are simply read from
+     *  the resulting input stream, elements buf[pos]
+     *  through buf[pos+len-1] will
+     *  be read; however, if a reset
+     *  operation  is performed, then bytes buf[0]
+     *  through buf[pos-1] will then
+     *  become available for input.
+     * 
+     * Parameters:buf - the input buffer.offset - the offset in the buffer of the first byte to read.length - the maximum number of bytes to read from the buffer.
+     */
+    public ByteArrayInputStream(byte[] buf, int offset, int length) {
+        construct(buf, offset, length);
+    }
+
+    private native void construct(byte[] buf, int offset, int length);
+
+    /**
      * Reads the next byte of data from this input stream. The value
      *  byte is returned as an int in the range
      *  0 to 255. If no byte is available
@@ -104,9 +128,7 @@ public class ByteArrayInputStream extends InputStream {
      *           -1 if there is no more data because the end of
      *           the stream has been reached.See Also:InputStream.read()
      */
-    public int read(byte[] b,
-                int off,
-                int len);
+    public int read(byte[] b, int off, int len);
 
     /**
      * Skips n bytes of input from this input stream. Fewer
@@ -177,5 +199,16 @@ public class ByteArrayInputStream extends InputStream {
      * IOException
      */
     public void reset();
+
+    /**
+     * Closes this input stream and releases any system resources
+     *  associated with the stream.
+     * 
+     * Overrides:close in class InputStream
+     * 
+     * Throws:
+     * IOException - if an I/O error occurs.
+     */
+    public void close() throws IOException;
 
 }

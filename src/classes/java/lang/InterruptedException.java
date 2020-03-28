@@ -10,4 +10,16 @@ public class InterruptedException extends Exception {
 
     private native void construct();
 
+    /**
+     * Constructs an InterruptedException with the
+     *  specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public InterruptedException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

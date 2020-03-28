@@ -46,4 +46,22 @@ public class Runtime {
      */
     public long totalMemory();
 
+    /**
+     * Runs the garbage collector.
+     *  Calling this method suggests that the Java Virtual Machine expend
+     *  effort toward recycling unused objects in order to make the memory
+     *  they currently occupy available for quick reuse. When control
+     *  returns from the method call, the Java Virtual Machine has made
+     *  its best effort to recycle all discarded objects.
+     * 
+     *  The name gc stands for "garbage
+     *  collector". The Java Virtual Machine performs this recycling
+     *  process automatically as needed, in a separate thread, even if the
+     *  gc method is not invoked explicitly.
+     * 
+     *  The method System.gc() is hte conventional and convenient
+     *  means of invoking this method.
+     */
+    public void gc();
+
 }

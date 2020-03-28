@@ -104,6 +104,57 @@ public class Gauge extends Item {
     public static final int INCREMENTAL_UPDATING = 3;
 
     /**
+     * Creates a new Gauge object with the given
+     *  label, in interactive or non-interactive mode, with the given
+     *  maximum and initial values.  In interactive mode (where
+     *  interactive is true) the maximum
+     *  value must be greater than zero, otherwise an exception is
+     *  thrown.  In non-interactive mode (where
+     *  interactive is false) the maximum
+     *  value must be greater than zero or equal to the special value
+     *  INDEFINITE, otherwise an exception is thrown.
+     * 
+     *  If the maximum value is greater than zero, the gauge has
+     *  definite range.  In this case the initial value must be within
+     *  the range zero to maxValue, inclusive.  If the
+     *  initial value is less than zero, the value is set to zero.  If
+     *  the initial value is greater than maxValue, it is
+     *  set to maxValue.
+     * 
+     *  If interactive is false and the
+     *  maximum value is INDEFINITE, this creates a
+     *  non-interactive gauge with indefinite range. The initial value
+     *  must be one of CONTINUOUS_IDLE,
+     *  INCREMENTAL_IDLE, CONTINUOUS_RUNNING,
+     *  or INCREMENTAL_UPDATING.
+     * 
+     * Parameters:label - the Gauge's labelinteractive - tells whether the user can change the valuemaxValue - the maximum value, or INDEFINITEinitialValue - the initial value in the range
+     *  [0..maxValue], or one of CONTINUOUS_IDLE,
+     *  INCREMENTAL_IDLE, CONTINUOUS_RUNNING,
+     *  or INCREMENTAL_UPDATING if maxValue is
+     *  INDEFINITE.
+     * Throws:
+     * IllegalArgumentException - if maxValue
+     *  is not positive for interactive gauges
+     * IllegalArgumentException - if maxValue is
+     *  neither positive nor
+     *  INDEFINITE for non-interactive gauges
+     * IllegalArgumentException - if initialValue is not one of
+     *  CONTINUOUS_IDLE, INCREMENTAL_IDLE,
+     *  CONTINUOUS_RUNNING, or INCREMENTAL_UPDATING
+     *  for a non-interactive gauge with indefinite rangeSee Also:INDEFINITE,
+     * CONTINUOUS_IDLE,
+     * INCREMENTAL_IDLE,
+     * CONTINUOUS_RUNNING,
+     * INCREMENTAL_UPDATING
+     */
+    public Gauge(String label, boolean interactive, int maxValue, int initialValue) {
+        construct(label, interactive, maxValue, initialValue);
+    }
+
+    private native void construct(String label, boolean interactive, int maxValue, int initialValue);
+
+    /**
      * Sets the label of the Item. If label
      *  is null, specifies that this item has no label.
      * 
@@ -218,8 +269,7 @@ public class Gauge extends Item {
      * See Also:Item.getPreferredHeight(),
      * Item.getPreferredWidth()
      */
-    public void setPreferredSize(int width,
-                             int height);
+    public void setPreferredSize(int width, int height);
 
     /**
      * Sets default Command for this Item.
@@ -357,5 +407,14 @@ public class Gauge extends Item {
      * setMaxValue(int)
      */
     public int getMaxValue();
+
+    /**
+     * Tells whether the user is allowed to change the value of the
+     *  Gauge.
+     * 
+     * Returns:a boolean indicating whether the Gauge is
+     *  interactive
+     */
+    public boolean isInteractive();
 
 }

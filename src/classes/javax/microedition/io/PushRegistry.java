@@ -45,11 +45,7 @@ public class PushRegistry {
      * SecurityException - if the MIDlet does not
      *               have permission to register a connectionSee Also:unregisterConnection(java.lang.String)
      */
-    public static void registerConnection(String connection,
-                                      String midlet,
-                                      String filter)
-                               throws ClassNotFoundException,
-                                      IOException;
+    public static void registerConnection(String connection, String midlet, String filter) throws ClassNotFoundException, IOException;
 
     /**
      * Remove a dynamic connection registration.
@@ -109,5 +105,44 @@ public class PushRegistry {
      *               or if the connection argument was nullSee Also:registerConnection(java.lang.String, java.lang.String, java.lang.String)
      */
     public static String getFilter(String connection);
+
+    /**
+     * Register a time to launch the specified application. The
+     *  PushRegistry supports one outstanding wake up
+     *  time per MIDlet in the current suite. An application
+     *  is expected to use a TimerTask for notification
+     *  of time based events while the application is running.
+     *  If a wakeup time is already registered, the previous value will
+     *  be returned, otherwise a zero is returned the first time the
+     *  alarm is registered.
+     * 
+     * Parameters:midlet - class name of the MIDlet within the
+     *                 current running MIDlet suite
+     *                 to be launched,
+     *                 when the alarm time has been reached.
+     *  The named MIDlet MUST be registered in the
+     *  descriptor file or the jar file manifest with a
+     *  MIDlet-&lt;n&gt; record. This parameter has the same semantics
+     *  as the MIDletClassName in the Push registration attribute
+     *  defined above in the class description.time - time at which the MIDlet is to be executed
+     *         in the format returned by Date.getTime()
+     * Returns:the time at which the most recent execution of this
+     *         MIDlet was scheduled to occur,
+     *         in the format returned by Date.getTime()
+     * Throws:
+     * ConnectionNotFoundException - if the runtime system does not
+     *               support alarm based application launch
+     * ClassNotFoundException - if the MIDlet
+     *  class name can not be found in the current MIDlet
+     *  suite or if this class is not included in any of the
+     *  MIDlet-&lt;n&gt; records in the descriptor file or the jar file
+     *  manifest or if the midlet argument is
+     *  null
+     * SecurityException - if the MIDlet does not
+     *               have permission to register an alarmSee Also:Date.getTime(),
+     * Timer,
+     * TimerTask
+     */
+    public static long registerAlarm(String midlet, long time) throws ClassNotFoundException, ConnectionNotFoundException;
 
 }

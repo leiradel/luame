@@ -215,8 +215,7 @@ public class Math {
      * Parameters:a - an int value.b - an int value.
      * Returns:the larger of a and b.See Also:Long.MAX_VALUE
      */
-    public static int max(int a,
-                      int b);
+    public static int max(int a, int b);
 
     /**
      * Returns the greater of two long values. That is, the
@@ -227,8 +226,7 @@ public class Math {
      * Parameters:a - a long value.b - a long value.
      * Returns:the larger of a and b.See Also:Long.MAX_VALUE
      */
-    public static long max(long a,
-                       long b);
+    public static long max(long a, long b);
 
     /**
      * Returns the greater of two float values.  That is, the
@@ -243,8 +241,7 @@ public class Math {
      * Parameters:a - a float value.b - a float value.
      * Returns:the larger of a and b.
      */
-    public static float max(float a,
-                        float b);
+    public static float max(float a, float b);
 
     /**
      * Returns the greater of two double values.  That is, the
@@ -259,8 +256,7 @@ public class Math {
      * Parameters:a - a double value.b - a double value.
      * Returns:the larger of a and b.
      */
-    public static double max(double a,
-                         double b);
+    public static double max(double a, double b);
 
     /**
      * Returns the smaller of two int values. That is, the
@@ -270,8 +266,7 @@ public class Math {
      * Parameters:a - an int value.b - an int value.
      * Returns:the smaller of a and b.See Also:Long.MIN_VALUE
      */
-    public static int min(int a,
-                      int b);
+    public static int min(int a, int b);
 
     /**
      * Returns the smaller of two long values. That is, the
@@ -282,8 +277,7 @@ public class Math {
      * Parameters:a - a long value.b - a long value.
      * Returns:the smaller of a and b.See Also:Long.MIN_VALUE
      */
-    public static long min(long a,
-                       long b);
+    public static long min(long a, long b);
 
     /**
      * Returns the smaller of two float values.  That is, the
@@ -299,7 +293,22 @@ public class Math {
      * Returns:the smaller of a and b.Since:
      *   CLDC 1.1
      */
-    public static float min(float a,
-                        float b);
+    public static float min(float a, float b);
+
+    /**
+     * Returns the smaller of two double values.  That is, the
+     *  result is the value closer to negative infinity. If the arguments have
+     *  the same value, the result is that same value. If either value
+     *  is NaN, then the result is NaN.  Unlike the
+     *  the numerical comparison operators, this method considers negative zero
+     *  to be strictly smaller than positive zero. If one argument is
+     *  positive zero and the other is negative zero, the result is negative
+     *  zero.
+     * 
+     * Parameters:a - a double value.b - a double value.
+     * Returns:the smaller of a and b.Since:
+     *   CLDC 1.1
+     */
+    public static double min(double a, double b);
 
 }

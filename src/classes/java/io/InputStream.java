@@ -1,6 +1,12 @@
 package java.io;
 
 public class InputStream {
+    public InputStream() {
+        construct();
+    }
+
+    private native void construct();
+
     /**
      * Reads the next byte of data from the input stream. The value byte is
      *  returned as an int in the range 0 to
@@ -16,8 +22,7 @@ public class InputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public abstract int read()
-                  throws IOException;
+    public abstract int read() throws IOException;
 
     /**
      * Reads some number of bytes from the input stream and stores them into
@@ -55,8 +60,7 @@ public class InputStream {
      * Throws:
      * IOException - if an I/O error occurs.See Also:read(byte[], int, int)
      */
-    public int read(byte[] b)
-         throws IOException;
+    public int read(byte[] b) throws IOException;
 
     /**
      * Reads up to len bytes of data from the input stream into
@@ -117,10 +121,7 @@ public class InputStream {
      * Throws:
      * IOException - if an I/O error occurs.See Also:read()
      */
-    public int read(byte[] b,
-                int off,
-                int len)
-         throws IOException;
+    public int read(byte[] b, int off, int len) throws IOException;
 
     /**
      * Skips over and discards n bytes of data from this input
@@ -141,8 +142,7 @@ public class InputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public long skip(long n)
-          throws IOException;
+    public long skip(long n) throws IOException;
 
     /**
      * Returns the number of bytes that can be read (or skipped over) from
@@ -160,8 +160,7 @@ public class InputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public int available()
-              throws IOException;
+    public int available() throws IOException;
 
     /**
      * Closes this input stream and releases any system resources associated
@@ -173,8 +172,7 @@ public class InputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void close()
-           throws IOException;
+    public void close() throws IOException;
 
     /**
      * Marks the current position in this input stream. A subsequent call to
@@ -244,7 +242,17 @@ public class InputStream {
      *                           mark has been invalidated.See Also:mark(int),
      * IOException
      */
-    public void reset()
-           throws IOException;
+    public void reset() throws IOException;
+
+    /**
+     * Tests if this input stream supports the mark and
+     *  reset methods. The markSupported method of
+     *  InputStream returns false.
+     * 
+     * Returns:true if this true type supports the mark and reset
+     *           method; false otherwise.See Also:mark(int),
+     * reset()
+     */
+    public boolean markSupported();
 
 }

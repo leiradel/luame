@@ -10,4 +10,16 @@ public class NullPointerException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs a NullPointerException with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public NullPointerException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

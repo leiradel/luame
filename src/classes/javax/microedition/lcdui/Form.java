@@ -14,6 +14,33 @@ public class Form extends Screen {
     private native void construct(String title);
 
     /**
+     * Creates a new Form with the specified
+     *  contents. This is identical to
+     *  creating an empty Form and then using a set of
+     *  append
+     *  methods.  The
+     *  items array may be null, in which case the
+     *  Form is created empty.  If
+     *  the items array is non-null, each element must be a valid
+     *  Item not
+     *  already contained within another Form.
+     * 
+     * Parameters:title - the Form's title stringitems - the array of items to be placed in the
+     *  Form, or null if there are no
+     *  items
+     * Throws:
+     * IllegalStateException - if one of the items is already owned by
+     *  another container
+     * NullPointerException - if an element of the items array is
+     *  null
+     */
+    public Form(String title, Item[] items) {
+        construct(title, items);
+    }
+
+    private native void construct(String title, Item[] items);
+
+    /**
      * Adds an Item into the Form.  The newly
      *  added Item becomes the last Item in the
      *  Form, and the size of the Form grows
@@ -81,8 +108,7 @@ public class Form extends Screen {
      * NullPointerException - if item is
      *  null
      */
-    public void insert(int itemNum,
-                   Item item);
+    public void insert(int itemNum, Item item);
 
     /**
      * Deletes the Item referenced by
@@ -129,8 +155,7 @@ public class Form extends Screen {
      * NullPointerException - if item is
      *  null
      */
-    public void set(int itemNum,
-                Item item);
+    public void set(int itemNum, Item item);
 
     /**
      * Gets the item at given position.  The contents of the
@@ -177,5 +202,21 @@ public class Form extends Screen {
      *   MIDP 2.0
      */
     public int getWidth();
+
+    /**
+     * Returns the height in pixels of the displayable area available
+     *  for items.
+     *  This value is the height of the form that can be displayed without
+     *  scrolling.
+     *  The value may depend on how the device uses the screen and may be
+     *  affected by the presence or absence of the ticker, title, or commands.
+     * 
+     * Overrides:getHeight in class Displayable
+     * 
+     * Returns:the height of the displayable area of the
+     *  Form in pixelsSince:
+     *   MIDP 2.0
+     */
+    public int getHeight();
 
 }

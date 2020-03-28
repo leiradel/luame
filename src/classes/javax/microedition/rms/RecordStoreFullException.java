@@ -13,4 +13,14 @@ public class RecordStoreFullException extends RecordStoreException {
 
     private native void construct(String message);
 
+    /**
+     * Constructs a new RecordStoreFullException with no detail
+     *  message.
+     */
+    public RecordStoreFullException() {
+        construct();
+    }
+
+    private native void construct();
+
 }

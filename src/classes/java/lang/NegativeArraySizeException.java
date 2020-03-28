@@ -11,4 +11,16 @@ public class NegativeArraySizeException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs a NegativeArraySizeException with the
+     *  specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public NegativeArraySizeException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

@@ -13,4 +13,14 @@ public class InvalidRecordIDException extends RecordStoreException {
 
     private native void construct(String message);
 
+    /**
+     * Constructs a new InvalidRecordIDException with no detail
+     *  message.
+     */
+    public InvalidRecordIDException() {
+        construct();
+    }
+
+    private native void construct();
+
 }

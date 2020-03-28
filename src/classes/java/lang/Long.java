@@ -16,6 +16,19 @@ public class Long {
     public static final long MAX_VALUE = ;
 
     /**
+     * Constructs a newly allocated Long object that
+     *  represents the primitive long argument.
+     * 
+     * Parameters:value - the value to be represented by the
+     *           Long object.
+     */
+    public Long(long value) {
+        construct(value);
+    }
+
+    private native void construct(long value);
+
+    /**
      * Creates a string representation of the first argument in the
      *  radix specified by the second argument.
      * 
@@ -49,8 +62,7 @@ public class Long {
      * Returns:a string representation of the argument in the specified radix.See Also:Character.MAX_RADIX,
      * Character.MIN_RADIX
      */
-    public static String toString(long i,
-                              int radix);
+    public static String toString(long i, int radix);
 
     /**
      * Returns a new String object representing the specified integer.
@@ -114,9 +126,7 @@ public class Long {
      * NumberFormatException - if the string does not contain a
      *                                     parsable integer.
      */
-    public static long parseLong(String s,
-                             int radix)
-                      throws NumberFormatException;
+    public static long parseLong(String s, int radix) throws NumberFormatException;
 
     /**
      * Parses the string argument as a signed decimal long.
@@ -137,8 +147,7 @@ public class Long {
      * NumberFormatException - if the string does not contain a
      *                parsable long.
      */
-    public static long parseLong(String s)
-                      throws NumberFormatException;
+    public static long parseLong(String s) throws NumberFormatException;
 
     /**
      * Returns the value of this Long as a long value.
@@ -194,5 +203,20 @@ public class Long {
      * Hashtable
      */
     public int hashCode();
+
+    /**
+     * Compares this object against the specified object.
+     *  The result is true if and only if the argument is
+     *  not null and is a Long object that
+     *  contains the same long value as this object.
+     * 
+     * Overrides:equals in class Object
+     * 
+     * Parameters:obj - the object to compare with.
+     * Returns:true if the objects are the same;
+     *           false otherwise.See Also:Boolean.hashCode(),
+     * Hashtable
+     */
+    public boolean equals(Object obj);
 
 }

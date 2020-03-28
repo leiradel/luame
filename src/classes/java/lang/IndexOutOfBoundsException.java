@@ -11,4 +11,16 @@ public class IndexOutOfBoundsException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs an IndexOutOfBoundsException with the
+     *  specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public IndexOutOfBoundsException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

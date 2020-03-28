@@ -122,13 +122,25 @@ public class CertificateException extends IOException {
      *   the status MUST be between BAD_EXTENSIONS and VERIFICATION_FAILED
      *   inclusive.
      */
-    public CertificateException(Certificate certificate,
-                            byte status) {
+    public CertificateException(Certificate certificate, byte status) {
         construct(certificate, status);
     }
 
-    private native void construct(Certificate certificate,
-                            byte status);
+    private native void construct(Certificate certificate, byte status);
+
+    /**
+     * Create a new exception with a message, Certificate,
+     *  and specific error reason.
+     * 
+     * Parameters:message - a descriptive messagecertificate - the certificate that caused the exceptionstatus - the reason for the exception;
+     *   the status MUST be between BAD_EXTENSIONS and VERIFICATION_FAILED
+     *   inclusive.
+     */
+    public CertificateException(String message, Certificate certificate, byte status) {
+        construct(message, certificate, status);
+    }
+
+    private native void construct(String message, Certificate certificate, byte status);
 
     /**
      * Get the Certificate that caused the exception.
@@ -136,5 +148,12 @@ public class CertificateException extends IOException {
      * Returns:the Certificate that included the failure.
      */
     public Certificate getCertificate();
+
+    /**
+     * Get the reason code.
+     * 
+     * Returns:the reason code
+     */
+    public byte getReason();
 
 }

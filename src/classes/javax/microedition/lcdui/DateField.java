@@ -49,13 +49,34 @@ public class DateField extends Item {
      * IllegalArgumentException - if the input mode's
      *  value is invalid
      */
-    public DateField(String label,
-                 int mode) {
+    public DateField(String label, int mode) {
         construct(label, mode);
     }
 
-    private native void construct(String label,
-                 int mode);
+    private native void construct(String label, int mode);
+
+    /**
+     * Creates a date field in which calendar calculations are based
+     *  on specific
+     *  TimeZone object and the default calendaring system for the
+     *  current locale.
+     *  The value of the DateField is initially in the
+     *  &quot;uninitialized&quot; state.
+     *  If timeZone is null, the system's
+     *  default time zone is used.
+     * 
+     * Parameters:label - item labelmode - the input mode, one of DATE, TIME
+     *  or DATE_TIMEtimeZone - a specific time zone, or null for the
+     *  default time zone
+     * Throws:
+     * IllegalArgumentException - if the input mode's value
+     *  is invalid
+     */
+    public DateField(String label, int mode, TimeZone timeZone) {
+        construct(label, mode, timeZone);
+    }
+
+    private native void construct(String label, int mode, TimeZone timeZone);
 
     /**
      * Returns date value of this field. Returned value is
@@ -112,5 +133,16 @@ public class DateField extends Item {
      * Returns:input mode of this fieldSee Also:setInputMode(int)
      */
     public int getInputMode();
+
+    /**
+     * Set input mode for this date field. Valid input modes are
+     *  DATE, TIME and DATE_TIME.
+     * 
+     * Parameters:mode - the input mode, must be one of DATE,
+     *  TIME or DATE_TIME
+     * Throws:
+     * IllegalArgumentException - if an invalid value is specifiedSee Also:getInputMode()
+     */
+    public void setInputMode(int mode);
 
 }

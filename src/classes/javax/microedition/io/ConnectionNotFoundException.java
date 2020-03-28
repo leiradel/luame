@@ -11,4 +11,17 @@ public class ConnectionNotFoundException extends IOException {
 
     private native void construct();
 
+    /**
+     * Constructs a ConnectionNotFoundException with the
+     *  specified detail message.  A detail message is a String
+     *  that describes this particular exception.
+     * 
+     * Parameters:s - the detail message
+     */
+    public ConnectionNotFoundException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

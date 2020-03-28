@@ -21,6 +21,18 @@ public class Reader {
     private native void construct();
 
     /**
+     * Create a new character-stream reader whose critical sections will
+     *  synchronize on the given object.
+     * 
+     * Parameters:lock - The Object to synchronize on.
+     */
+    protected Reader(Object lock) {
+        construct(lock);
+    }
+
+    private native void construct(Object lock);
+
+    /**
      * Read a single character.  This method will block until a character is
      *  available, an I/O error occurs, or the end of the stream is reached.
      * 
@@ -33,8 +45,7 @@ public class Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public int read()
-         throws IOException;
+    public int read() throws IOException;
 
     /**
      * Read characters into an array.  This method will block until some input
@@ -46,8 +57,7 @@ public class Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public int read(char[] cbuf)
-         throws IOException;
+    public int read(char[] cbuf) throws IOException;
 
     /**
      * Read characters into a portion of an array.  This method will block
@@ -60,10 +70,7 @@ public class Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public abstract int read(char[] cbuf,
-                         int off,
-                         int len)
-                  throws IOException;
+    public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
     /**
      * Skip characters.  This method will block until some characters are
@@ -75,8 +82,7 @@ public class Reader {
      * IllegalArgumentException - If n is negative.
      * IOException - If an I/O error occurs
      */
-    public long skip(long n)
-          throws IOException;
+    public long skip(long n) throws IOException;
 
     /**
      * Tell whether this stream is ready to be read.
@@ -87,8 +93,7 @@ public class Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public boolean ready()
-              throws IOException;
+    public boolean ready() throws IOException;
 
     /**
      * Tell whether this stream supports the mark() operation. The default
@@ -112,8 +117,7 @@ public class Reader {
      * IOException - If the stream does not support mark(),
      *                           or if some other I/O error occurs
      */
-    public void mark(int readAheadLimit)
-          throws IOException;
+    public void mark(int readAheadLimit) throws IOException;
 
     /**
      * Reset the stream.  If the stream has been marked, then attempt to
@@ -129,7 +133,16 @@ public class Reader {
      *                           or if the stream does not support reset(),
      *                           or if some other I/O error occurs
      */
-    public void reset()
-           throws IOException;
+    public void reset() throws IOException;
+
+    /**
+     * Close the stream.  Once a stream has been closed, further read(),
+     *  ready(), mark(), or reset() invocations will throw an IOException.
+     *  Closing a previously-closed stream, however, has no effect.
+     * 
+     * Throws:
+     * IOException - If an I/O error occurs
+     */
+    public abstract void close() throws IOException;
 
 }

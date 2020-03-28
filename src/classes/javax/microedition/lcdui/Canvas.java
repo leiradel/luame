@@ -191,6 +191,15 @@ public class Canvas extends Displayable {
     public static final int KEY_POUND = 35;
 
     /**
+     * Constructs a new Canvas object.
+     */
+    protected Canvas() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
      * Checks if the Canvas is double buffered by the
      *  implementation.
      * 
@@ -350,8 +359,7 @@ public class Canvas extends Displayable {
      *  to the Canvas)y - the vertical location where the pointer was pressed
      *  (relative to the Canvas)
      */
-    protected void pointerPressed(int x,
-                              int y);
+    protected void pointerPressed(int x, int y);
 
     /**
      * Called when the pointer is released.
@@ -365,8 +373,7 @@ public class Canvas extends Displayable {
      *  (relative to the Canvas)y - the vertical location where the pointer was released
      *  (relative to the Canvas)
      */
-    protected void pointerReleased(int x,
-                               int y);
+    protected void pointerReleased(int x, int y);
 
     /**
      * Called when the pointer is dragged.
@@ -380,8 +387,7 @@ public class Canvas extends Displayable {
      *  (relative to the Canvas)y - the vertical location where the pointer was dragged
      *  (relative to the Canvas)
      */
-    protected void pointerDragged(int x,
-                              int y);
+    protected void pointerDragged(int x, int y);
 
     /**
      * Requests a repaint for the specified region of the
@@ -421,10 +427,7 @@ public class Canvas extends Displayable {
      * Parameters:x - the x coordinate of the rectangle to be repaintedy - the y coordinate of the rectangle to be repaintedwidth - the width of the rectangle to be repaintedheight - the height of the rectangle to be repaintedSee Also:Display.callSerially(Runnable),
      * serviceRepaints()
      */
-    public final void repaint(int x,
-                          int y,
-                          int width,
-                          int height);
+    public final void repaint(int x, int y, int width, int height);
 
     /**
      * Requests a repaint for the entire Canvas. The
@@ -571,5 +574,57 @@ public class Canvas extends Displayable {
      *  rendering the Canvas
      */
     protected abstract void paint(Graphics g);
+
+    /**
+     * Called when the drawable area of the Canvas has
+     *  been changed.  This
+     *  method has augmented semantics compared to Displayable.sizeChanged.
+     * 
+     *  In addition to the causes listed in
+     *  Displayable.sizeChanged, a size change can occur on a
+     *  Canvas because of a change between normal and
+     *  full-screen modes.
+     * 
+     *  If the size of a Canvas changes while it is
+     *  actually visible on the
+     *  display, it may trigger an automatic repaint request.  If this occurs,
+     *  the call to sizeChanged will occur prior to the call to
+     *  paint.  If the Canvas has become smaller, the
+     *  implementation may choose not to trigger a repaint request if the
+     *  remaining contents of the Canvas have been
+     *  preserved.  Similarly, if
+     *  the Canvas has become larger, the implementation
+     *  may choose to trigger
+     *  a repaint only for the new region.  In both cases, the preserved
+     *  contents must remain stationary with respect to the origin of the
+     *  Canvas.  If the size change is significant to the
+     *  contents of the
+     *  Canvas, the application must explicitly issue a
+     *  repaint request for the
+     *  changed areas.  Note that the application's repaint request should not
+     *  cause multiple repaints, since it can be coalesced with repaint
+     *  requests that are already pending.
+     * 
+     *  If the size of a Canvas changes while it is not
+     *  visible, the
+     *  implementation may choose to delay calls to sizeChanged
+     *  until immediately prior to the call to showNotify.  In
+     *  that case, there will be only one call to sizeChanged,
+     *  regardless of the number of size changes.
+     * 
+     *  An application that is sensitive to size changes can update instance
+     *  variables in its implementation of sizeChanged.  These
+     *  updated values will be available to the code in the
+     *  showNotify, hideNotify, and
+     *  paint methods.
+     * 
+     * Overrides:sizeChanged in class Displayable
+     * 
+     * Parameters:w - the new width in pixels of the drawable area of the
+     *  Canvash - the new height in pixels of the drawable area of
+     *  the CanvasSince:
+     *   MIDP 2.0
+     */
+    protected void sizeChanged(int w, int h);
 
 }

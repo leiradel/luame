@@ -397,8 +397,7 @@ public class Item {
      * See Also:getPreferredHeight(),
      * getPreferredWidth()
      */
-    public void setPreferredSize(int width,
-                             int height);
+    public void setPreferredSize(int width, int height);
 
     /**
      * Gets the minimum width for this Item.  This is a width
@@ -454,5 +453,48 @@ public class Item {
      *   MIDP 2.0
      */
     public void setDefaultCommand(Command cmd);
+
+    /**
+     * Causes this Item's containing Form to notify
+     *  the Item's ItemStateListener.
+     *  The application calls this method to inform the
+     *  listener on the Item that the Item's
+     *  state has been changed in
+     *  response to an action.  Even though this method simply causes a call
+     *  to another part of the application, this mechanism is useful for
+     *  decoupling the implementation of an Item (in particular, the
+     *  implementation of a CustomItem, though this also applies to
+     *  subclasses of other items) from the consumer of the item.
+     * 
+     *  If an edit was performed by invoking a separate screen, and the
+     *  editor now wishes to &quot;return&quot; to the form which contained the
+     *  selected Item, the preferred method is
+     *  Display.setCurrent(Item)
+     *  instead of Display.setCurrent(Displayable),
+     *  because it allows the
+     *  Form to restore focus to the Item
+     *  that initially invoked the editor.
+     * 
+     *  In order to make sure that the documented behavior of
+     *  ItemStateListener is maintained, it is up to the caller
+     *  (application) to guarantee that this function is
+     *  not called unless:
+     * 
+     *  the Item's value has actually been changed, and
+     *  the change was the result of a user action (an &quot;edit&quot;)
+     *  and NOT as a result of state change via calls to
+     *  Item's APIs
+     * 
+     *  The call to ItemStateListener.itemStateChanged
+     *  may be delayed in order to be serialized with the event stream.
+     *  The notifyStateChanged method does not block awaiting
+     *  the completion of the itemStateChanged method.
+     * 
+     * Throws:
+     * IllegalStateException - if the Item is not owned
+     *  by a FormSince:
+     *   MIDP 2.0
+     */
+    public void notifyStateChanged();
 
 }

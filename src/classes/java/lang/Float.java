@@ -59,6 +59,18 @@ public class Float {
     private native void construct(float value);
 
     /**
+     * Constructs a newly allocated Floatobject that
+     *  represents the argument converted to type float.
+     * 
+     * Parameters:value - the value to be represented by the Float.
+     */
+    public Float(double value) {
+        construct(value);
+    }
+
+    private native void construct(double value);
+
+    /**
      * Returns a String representation for the specified float value.
      *  The argument is converted to a readable string format as follows.
      *  All characters and characters in strings mentioned below are ASCII
@@ -151,8 +163,7 @@ public class Float {
      * NumberFormatException - if the string does not contain a
      *                parsable number.
      */
-    public static Float valueOf(String s)
-                     throws NumberFormatException;
+    public static Float valueOf(String s) throws NumberFormatException;
 
     /**
      * Returns a new float initialized to the value represented by the
@@ -165,8 +176,7 @@ public class Float {
      *                parsable float.Since:
      *   JDK1.2
      */
-    public static float parseFloat(String s)
-                        throws NumberFormatException;
+    public static float parseFloat(String s) throws NumberFormatException;
 
     /**
      * Returns true if the specified number is the special Not-a-Number (NaN)
@@ -344,5 +354,40 @@ public class Float {
      * Returns:the bits that represent the floating-point number.
      */
     public static int floatToIntBits(float value);
+
+    /**
+     * Returns the single-float corresponding to a given bit representation.
+     *  The argument is considered to be a representation of a
+     *  floating-point value according to the IEEE 754 floating-point
+     *  "single precision" bit layout.
+     * 
+     *  If the argument is 0x7f800000, the result is positive
+     *  infinity.
+     * 
+     *  If the argument is 0xff800000, the result is negative
+     *  infinity.
+     * 
+     *  If the argument is any value in the range 0x7f800001
+     *  through 0x7fffffff or in the range
+     *  0xff800001 through 0xffffffff, the result is
+     *  NaN. All IEEE 754 NaN values of type float are, in effect,
+     *  lumped together by the Java programming language into a single
+     *  float value called NaN.
+     * 
+     *  In all other cases, let s, e, and m be three
+     *  values that can be computed from the argument:
+     * 
+     *  int s = ((bits >> 31) == 0) ? 1 : -1;
+     *  int e = ((bits >> 23) & 0xff);
+     *  int m = (e == 0) ?
+     *                  (bits & 0x7fffff)
+     *  Then the floating-point result equals the value of the mathematical
+     *  expression s&#183;m&#183;2e-150.
+     * 
+     * Parameters:bits - an integer.
+     * Returns:the single-format floating-point value with the same bit
+     *           pattern.
+     */
+    public static float intBitsToFloat(int bits);
 
 }

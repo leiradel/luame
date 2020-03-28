@@ -102,9 +102,7 @@ public class Manager {
      * SecurityException - Thrown if the caller does not
      *  have security permission to create the Player.
      */
-    public static Player createPlayer(String locator)
-                           throws IOException,
-                                  MediaException;
+    public static Player createPlayer(String locator) throws IOException, MediaException;
 
     /**
      * Create a Player to play back media from an
@@ -132,9 +130,35 @@ public class Manager {
      * SecurityException - Thrown if the caller does not
      *  have security permission to create the Player.
      */
-    public static Player createPlayer(InputStream stream,
-                                  String type)
-                           throws IOException,
-                                  MediaException;
+    public static Player createPlayer(InputStream stream, String type) throws IOException, MediaException;
+
+    /**
+     * Play back a tone as specified by a note and its duration.
+     *  A note is given in the range of 0 to 127 inclusive.  The frequency
+     *  of the note can be calculated from the following formula:
+     * 
+     *      SEMITONE_CONST = 17.31234049066755 = 1/(ln(2^(1/12)))
+     *      note = ln(freq/8.176)*SEMITONE_CONST
+     *      The musical note A = MIDI note 69 (0x45) = 440 Hz.
+     * 
+     *  This call is a non-blocking call. Notice that this method may
+     *  utilize CPU resources significantly on devices that don't
+     *  have hardware support for tone generation.
+     * 
+     * Parameters:note - Defines the tone of the note as specified by the
+     *  above formula.duration - The duration of the tone in milli-seconds.
+     *  Duration must be positive.volume - Audio volume range from 0 to 100.  100 represents
+     *  the maximum
+     *  volume at the current hardware level.  Setting the volume to a
+     *  value less
+     *  than 0 will set the volume to 0.  Setting the volume to greater than
+     *  100 will set the volume to 100.
+     * Throws:
+     * IllegalArgumentException - Thrown if the given note or
+     *  duration is out of range.
+     * MediaException - Thrown if the tone cannot be played
+     *  due to a device-related problem.
+     */
+    public static void playTone(int note, int duration, int volume) throws MediaException;
 
 }

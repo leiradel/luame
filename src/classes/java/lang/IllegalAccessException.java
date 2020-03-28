@@ -11,4 +11,15 @@ public class IllegalAccessException extends Exception {
 
     private native void construct();
 
+    /**
+     * Constructs an IllegalAccessException with a detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public IllegalAccessException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

@@ -171,15 +171,36 @@ public class Command {
      * IllegalArgumentException - if the commandType
      *  is an invalid typeSee Also:Command(String, String, int, int)
      */
-    public Command(String label,
-               int commandType,
-               int priority) {
+    public Command(String label, int commandType, int priority) {
         construct(label, commandType, priority);
     }
 
-    private native void construct(String label,
-               int commandType,
-               int priority);
+    private native void construct(String label, int commandType, int priority);
+
+    /**
+     * Creates a new command object with the given
+     *  labels,
+     *  type, and
+     *  priority.
+     * 
+     *  The short label is required and must not be
+     *  null.  The long label is
+     *  optional and may be null if the command is to have
+     *  no long label.
+     * 
+     * Parameters:shortLabel - the command's short labellongLabel - the command's long label, or null if nonecommandType - the command's typepriority - the command's priority value
+     * Throws:
+     * NullPointerException - if shortLabel is
+     *  null
+     * IllegalArgumentException - if the commandType is an
+     *  invalid typeSince:
+     *   MIDP 2.0
+     */
+    public Command(String shortLabel, String longLabel, int commandType, int priority) {
+        construct(shortLabel, longLabel, commandType, priority);
+    }
+
+    private native void construct(String shortLabel, String longLabel, int commandType, int priority);
 
     /**
      * Gets the short label of the command.
@@ -204,5 +225,12 @@ public class Command {
      * Returns:type of the Command
      */
     public int getCommandType();
+
+    /**
+     * Gets the priority of the command.
+     * 
+     * Returns:priority of the Command
+     */
+    public int getPriority();
 
 }

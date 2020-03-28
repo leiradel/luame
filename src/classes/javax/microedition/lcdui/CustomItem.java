@@ -104,6 +104,18 @@ public class CustomItem extends Item {
     protected static final int NONE = 0;
 
     /**
+     * Superclass constructor, provided so that the
+     *  CustomItem subclass can specify its label.
+     * 
+     * Parameters:label - the CustomItem's label
+     */
+    protected CustomItem(String label) {
+        construct(label);
+    }
+
+    private native void construct(String label);
+
+    /**
      * Gets the game action associated with the given key code of the
      *  device.  Returns zero if no game action is associated with this key
      *  code.  See the
@@ -240,8 +252,7 @@ public class CustomItem extends Item {
      * 
      * Parameters:w - the new width of the item's content areah - the new height of the item's content area
      */
-    protected void sizeChanged(int w,
-                           int h);
+    protected void sizeChanged(int w, int h);
 
     /**
      * Signals that the CustomItem's size and traversal
@@ -305,9 +316,7 @@ public class CustomItem extends Item {
      * Parameters:g - the Graphics object to be used for
      *  rendering the itemw - current width of the item in pixelsh - current height of the item in pixels
      */
-    protected abstract void paint(Graphics g,
-                              int w,
-                              int h);
+    protected abstract void paint(Graphics g, int w, int h);
 
     /**
      * Called by subclass code to request that the item be repainted.  If this
@@ -332,10 +341,7 @@ public class CustomItem extends Item {
      * 
      * Parameters:x - the x coordinate of the rectangular area to be updatedy - the y coordinate of the rectangular area to be updatedw - the width of the rectangular area to be updatedh - the height of the rectangular area to be updated
      */
-    protected final void repaint(int x,
-                             int y,
-                             int w,
-                             int h);
+    protected final void repaint(int x, int y, int w, int h);
 
     /**
      * Called by the system when traversal has entered the item or has
@@ -622,10 +628,7 @@ public class CustomItem extends Item {
      * TRAVERSE_HORIZONTAL,
      * TRAVERSE_VERTICAL
      */
-    protected boolean traverse(int dir,
-                           int viewportWidth,
-                           int viewportHeight,
-                           int[] visRect_inout);
+    protected boolean traverse(int dir, int viewportWidth, int viewportHeight, int[] visRect_inout);
 
     /**
      * Called by the system when traversal has occurred out of the item.  This
@@ -688,8 +691,7 @@ public class CustomItem extends Item {
      * 
      * Parameters:x - the x coordinate of the pointer downy - the y coordinate of the pointer downSee Also:getInteractionModes()
      */
-    protected void pointerPressed(int x,
-                              int y);
+    protected void pointerPressed(int x, int y);
 
     /**
      * Called by the system when a pointer up action (for example, a pen lift)
@@ -707,8 +709,7 @@ public class CustomItem extends Item {
      * 
      * Parameters:x - the x coordinate of the pointer upy - the x coordinate of the pointer upSee Also:getInteractionModes()
      */
-    protected void pointerReleased(int x,
-                               int y);
+    protected void pointerReleased(int x, int y);
 
     /**
      * Called by the system when a pointer drag action (for example, pen
@@ -726,8 +727,7 @@ public class CustomItem extends Item {
      * 
      * Parameters:x - the x coordinate of the pointer dragy - the x coordinate of the pointer dragSee Also:getInteractionModes()
      */
-    protected void pointerDragged(int x,
-                              int y);
+    protected void pointerDragged(int x, int y);
 
     /**
      * Called by the system to notify the item that it is now at least
@@ -738,5 +738,15 @@ public class CustomItem extends Item {
      *  The default implementation of this method does nothing.
      */
     protected void showNotify();
+
+    /**
+     * Called by the system to notify the item that it is now completely
+     *  invisible, when it previously had been at least partially visible.  No
+     *  further paint() calls will be made on this item
+     *  until after a showNotify() has been called again.
+     * 
+     *  The default implementation of this method does nothing.
+     */
+    protected void hideNotify();
 
 }

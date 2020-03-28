@@ -296,6 +296,38 @@ public class TextField extends Item {
     public static final int CONSTRAINT_MASK = ;
 
     /**
+     * Creates a new TextField object with the given label, initial
+     *  contents, maximum size in characters, and constraints.
+     *  If the text parameter is null, the
+     *  TextField is created empty.
+     *  The maxSize parameter must be greater than zero.
+     *  An IllegalArgumentException is thrown if the
+     *  length of the initial contents string exceeds maxSize.
+     *  However,
+     *  the implementation may assign a maximum size smaller than the
+     *  application had requested.  If this occurs, and if the length of the
+     *  contents exceeds the newly assigned maximum size, the contents are
+     *  truncated from the end in order to fit, and no exception is thrown.
+     * 
+     * Parameters:label - item labeltext - the initial contents, or null if the
+     *  TextField is to be emptymaxSize - the maximum capacity in charactersconstraints - see input constraints
+     * Throws:
+     * IllegalArgumentException - if maxSize is zero or less
+     * IllegalArgumentException - if the value of the constraints
+     *  parameter
+     *  is invalid
+     * IllegalArgumentException - if text is illegal
+     *  for the specified constraints
+     * IllegalArgumentException - if the length of the string exceeds
+     *  the requested maximum capacity
+     */
+    public TextField(String label, String text, int maxSize, int constraints) {
+        construct(label, text, maxSize, constraints);
+    }
+
+    private native void construct(String label, String text, int maxSize, int constraints);
+
+    /**
      * Gets the contents of the TextField as a string value.
      * 
      * Returns:the current contentsSee Also:setString(java.lang.String)
@@ -363,9 +395,7 @@ public class TextField extends Item {
      * IllegalArgumentException - if the text would exceed the current
      *  maximum capacitySee Also:getChars(char[])
      */
-    public void setChars(char[] data,
-                     int offset,
-                     int length);
+    public void setChars(char[] data, int offset, int length);
 
     /**
      * Inserts a string into the contents of the
@@ -404,8 +434,7 @@ public class TextField extends Item {
      *  maximum capacity
      * NullPointerException - if src is null
      */
-    public void insert(String src,
-                   int position);
+    public void insert(String src, int position);
 
     /**
      * Inserts a subrange of an array of characters into the contents of
@@ -436,10 +465,7 @@ public class TextField extends Item {
      *  maximum capacity
      * NullPointerException - if data is null
      */
-    public void insert(char[] data,
-                   int offset,
-                   int length,
-                   int position);
+    public void insert(char[] data, int offset, int length, int position);
 
     /**
      * Deletes characters from the TextField.
@@ -462,8 +488,7 @@ public class TextField extends Item {
      *  and length do not
      *  specify a valid range within the contents of the TextField
      */
-    public void delete(int offset,
-                   int length);
+    public void delete(int offset, int length);
 
     /**
      * Returns the maximum size (number of characters) that can be
@@ -528,5 +553,22 @@ public class TextField extends Item {
      *  input constraints)See Also:setConstraints(int)
      */
     public int getConstraints();
+
+    /**
+     * Sets a hint to the implementation as to the input mode that should be
+     *  used when the user initiates editing of this TextField.  The
+     *  characterSubset parameter names a subset of Unicode
+     *  characters that is used by the implementation to choose an initial
+     *  input mode.  If null is passed, the implementation should
+     *  choose a default input mode.
+     * 
+     *  See Input Modes for a full explanation of input
+     *  modes.
+     * 
+     * Parameters:characterSubset - a string naming a Unicode character subset,
+     *  or nullSince:
+     *   MIDP 2.0
+     */
+    public void setInitialInputMode(String characterSubset);
 
 }

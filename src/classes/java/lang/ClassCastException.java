@@ -10,4 +10,16 @@ public class ClassCastException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs a ClassCastException with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public ClassCastException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

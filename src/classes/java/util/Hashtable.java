@@ -18,6 +18,19 @@ public class Hashtable {
     private native void construct(int initialCapacity);
 
     /**
+     * Constructs a new, empty hashtable with a default capacity and load
+     *  factor.
+     * 
+     * Since:
+     *   JDK1.0
+     */
+    public Hashtable() {
+        construct();
+    }
+
+    private native void construct();
+
+    /**
      * Returns the number of keys in this hashtable.
      * 
      * Returns:the number of keys in this hashtable.Since:
@@ -124,8 +137,7 @@ public class Hashtable {
      * See Also:Object.equals(java.lang.Object),
      * get(java.lang.Object)
      */
-    public Object put(Object key,
-                  Object value);
+    public Object put(Object key, Object value);
 
     /**
      * Removes the key (and its corresponding value) from this
@@ -145,5 +157,15 @@ public class Hashtable {
      *   JDK1.0
      */
     public void clear();
+
+    /**
+     * Returns a rather long string representation of this hashtable.
+     * 
+     * Overrides:toString in class Object
+     * 
+     * Returns:a string representation of this hashtable.Since:
+     *   JDK1.0
+     */
+    public String toString();
 
 }

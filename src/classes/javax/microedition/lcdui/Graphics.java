@@ -109,8 +109,7 @@ public class Graphics {
      * Parameters:x - the x coordinate of the new translation originy - the y coordinate of the new translation originSee Also:getTranslateX(),
      * getTranslateY()
      */
-    public void translate(int x,
-                      int y);
+    public void translate(int x, int y);
 
     /**
      * Gets the X coordinate of the translated origin of this graphics context.
@@ -181,9 +180,7 @@ public class Graphics {
      * IllegalArgumentException - if any of the color components
      *  are outside of range 0-255See Also:getColor()
      */
-    public void setColor(int red,
-                     int green,
-                     int blue);
+    public void setColor(int red, int green, int blue);
 
     /**
      * Sets the current color to the specified RGB values. All subsequent
@@ -302,10 +299,7 @@ public class Graphics {
      * 
      * Parameters:x - the x coordinate of the rectangle to intersect the clip withy - the y coordinate of the rectangle to intersect the clip withwidth - the width of the rectangle to intersect the clip withheight - the height of the rectangle to intersect the clip withSee Also:setClip(int, int, int, int)
      */
-    public void clipRect(int x,
-                     int y,
-                     int width,
-                     int height);
+    public void clipRect(int x, int y, int width, int height);
 
     /**
      * Sets the current clip to the rectangle specified by the
@@ -314,10 +308,7 @@ public class Graphics {
      * 
      * Parameters:x - the x coordinate of the new clip rectangley - the y coordinate of the new clip rectanglewidth - the width of the new clip rectangleheight - the height of the new clip rectangleSee Also:clipRect(int, int, int, int)
      */
-    public void setClip(int x,
-                    int y,
-                    int width,
-                    int height);
+    public void setClip(int x, int y, int width, int height);
 
     /**
      * Draws a line between the coordinates (x1,y1) and
@@ -326,10 +317,7 @@ public class Graphics {
      * 
      * Parameters:x1 - the x coordinate of the start of the liney1 - the y coordinate of the start of the linex2 - the x coordinate of the end of the liney2 - the y coordinate of the end of the line
      */
-    public void drawLine(int x1,
-                     int y1,
-                     int x2,
-                     int y2);
+    public void drawLine(int x1, int y1, int x2, int y2);
 
     /**
      * Fills the specified rectangle with the current color.
@@ -338,10 +326,7 @@ public class Graphics {
      * 
      * Parameters:x - the x coordinate of the rectangle to be filledy - the y coordinate of the rectangle to be filledwidth - the width of the rectangle to be filledheight - the height of the rectangle to be filledSee Also:drawRect(int, int, int, int)
      */
-    public void fillRect(int x,
-                     int y,
-                     int width,
-                     int height);
+    public void fillRect(int x, int y, int width, int height);
 
     /**
      * Draws the outline of the specified rectangle using the current
@@ -353,10 +338,7 @@ public class Graphics {
      * 
      * Parameters:x - the x coordinate of the rectangle to be drawny - the y coordinate of the rectangle to be drawnwidth - the width of the rectangle to be drawnheight - the height of the rectangle to be drawnSee Also:fillRect(int, int, int, int)
      */
-    public void drawRect(int x,
-                     int y,
-                     int width,
-                     int height);
+    public void drawRect(int x, int y, int width, int height);
 
     /**
      * Draws the outline of the specified rounded corner rectangle
@@ -369,12 +351,7 @@ public class Graphics {
      * 
      * Parameters:x - the x coordinate of the rectangle to be drawny - the y coordinate of the rectangle to be drawnwidth - the width of the rectangle to be drawnheight - the height of the rectangle to be drawnarcWidth - the horizontal diameter of the arc at the four cornersarcHeight - the vertical diameter of the arc at the four cornersSee Also:fillRoundRect(int, int, int, int, int, int)
      */
-    public void drawRoundRect(int x,
-                          int y,
-                          int width,
-                          int height,
-                          int arcWidth,
-                          int arcHeight);
+    public void drawRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight);
 
     /**
      * Fills the specified rounded corner rectangle with the current color.
@@ -384,12 +361,7 @@ public class Graphics {
      * Parameters:x - the x coordinate of the rectangle to be filledy - the y coordinate of the rectangle to be filledwidth - the width of the rectangle to be filledheight - the height of the rectangle to be filledarcWidth - the horizontal diameter of the arc at the four
      *  cornersarcHeight - the vertical diameter of the arc at the four cornersSee Also:drawRoundRect(int, int, int, int, int, int)
      */
-    public void fillRoundRect(int x,
-                          int y,
-                          int width,
-                          int height,
-                          int arcWidth,
-                          int arcHeight);
+    public void fillRoundRect(int x, int y, int width, int height, int arcWidth, int arcHeight);
 
     /**
      * Fills a circular or elliptical arc covering the specified rectangle.
@@ -431,12 +403,7 @@ public class Graphics {
      *  arc to be filled.width - the width of the arc to be filledheight - the height of the arc to be filledstartAngle - the beginning angle.arcAngle - the angular extent of the arc,
      *  relative to the start angle.See Also:drawArc(int, int, int, int, int, int)
      */
-    public void fillArc(int x,
-                    int y,
-                    int width,
-                    int height,
-                    int startAngle,
-                    int arcAngle);
+    public void fillArc(int x, int y, int width, int height, int startAngle, int arcAngle);
 
     /**
      * Draws the outline of a circular or elliptical arc
@@ -474,12 +441,7 @@ public class Graphics {
      *  of the arc to be drawnwidth - the width of the arc to be drawnheight - the height of the arc to be drawnstartAngle - the beginning anglearcAngle - the angular extent of the arc, relative to
      *  the start angleSee Also:fillArc(int, int, int, int, int, int)
      */
-    public void drawArc(int x,
-                    int y,
-                    int width,
-                    int height,
-                    int startAngle,
-                    int arcAngle);
+    public void drawArc(int x, int y, int width, int height, int startAngle, int arcAngle);
 
     /**
      * Draws the specified String using the current font and color.
@@ -491,10 +453,7 @@ public class Graphics {
      * NullPointerException - if str is null
      * IllegalArgumentException - if anchor is not a legal valueSee Also:drawChars(char[], int, int, int, int, int)
      */
-    public void drawString(String str,
-                       int x,
-                       int y,
-                       int anchor);
+    public void drawString(String str, int x, int y, int anchor);
 
     /**
      * Draws the specified String using the current font and color.
@@ -519,12 +478,7 @@ public class Graphics {
      *  is not a legal value
      * NullPointerException - if str is nullSee Also:drawString(String, int, int, int).
      */
-    public void drawSubstring(String str,
-                          int offset,
-                          int len,
-                          int x,
-                          int y,
-                          int anchor);
+    public void drawSubstring(String str, int offset, int len, int x, int y, int anchor);
 
     /**
      * Draws the specified character using the current font and color.
@@ -536,10 +490,7 @@ public class Graphics {
      *  is not a legal valueSee Also:drawString(java.lang.String, int, int, int),
      * drawChars(char[], int, int, int, int, int)
      */
-    public void drawChar(char character,
-                     int x,
-                     int y,
-                     int anchor);
+    public void drawChar(char character, int x, int y, int anchor);
 
     /**
      * Draws the specified characters using the current font and color.
@@ -562,12 +513,7 @@ public class Graphics {
      * IllegalArgumentException - if anchor is not a legal value
      * NullPointerException - if data is nullSee Also:drawString(java.lang.String, int, int, int)
      */
-    public void drawChars(char[] data,
-                      int offset,
-                      int length,
-                      int x,
-                      int y,
-                      int anchor);
+    public void drawChars(char[] data, int offset, int length, int x, int y, int anchor);
 
     /**
      * Draws the specified image by using the anchor point.
@@ -591,10 +537,7 @@ public class Graphics {
      *  is not a legal value
      * NullPointerException - if img is nullSee Also:Image
      */
-    public void drawImage(Image img,
-                      int x,
-                      int y,
-                      int anchor);
+    public void drawImage(Image img, int x, int y, int anchor);
 
     /**
      * Copies a region of the specified source image to a location within
@@ -679,15 +622,7 @@ public class Graphics {
      *  the bounds of the source imageSince:
      *   MIDP 2.0
      */
-    public void drawRegion(Image src,
-                       int x_src,
-                       int y_src,
-                       int width,
-                       int height,
-                       int transform,
-                       int x_dest,
-                       int y_dest,
-                       int anchor);
+    public void drawRegion(Image src, int x_src, int y_src, int width, int height, int transform, int x_dest, int y_dest, int anchor);
 
     /**
      * Copies the contents of a rectangular area
@@ -744,13 +679,7 @@ public class Graphics {
      *  the bounds of the source imageSince:
      *   MIDP 2.0
      */
-    public void copyArea(int x_src,
-                     int y_src,
-                     int width,
-                     int height,
-                     int x_dest,
-                     int y_dest,
-                     int anchor);
+    public void copyArea(int x_src, int y_src, int width, int height, int x_dest, int y_dest, int anchor);
 
     /**
      * Fills the specified triangle will the current color.  The lines
@@ -760,12 +689,7 @@ public class Graphics {
      * Parameters:x1 - the x coordinate of the first vertex of the triangley1 - the y coordinate of the first vertex of the trianglex2 - the x coordinate of the second vertex of the triangley2 - the y coordinate of the second vertex of the trianglex3 - the x coordinate of the third vertex of the triangley3 - the y coordinate of the third vertex of the triangleSince:
      *   MIDP 2.0
      */
-    public void fillTriangle(int x1,
-                         int y1,
-                         int x2,
-                         int y2,
-                         int x3,
-                         int y3);
+    public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3);
 
     /**
      * Renders a series of device-independent RGB+transparency values in a
@@ -840,13 +764,24 @@ public class Graphics {
      * NullPointerException - if rgbData is nullSince:
      *   MIDP 2.0
      */
-    public void drawRGB(int[] rgbData,
-                    int offset,
-                    int scanlength,
-                    int x,
-                    int y,
-                    int width,
-                    int height,
-                    boolean processAlpha);
+    public void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha);
+
+    /**
+     * Gets the color that will be displayed if the specified color
+     *  is requested. This method enables the developer to check the
+     *  manner in which RGB values are mapped to the set of distinct
+     *  colors that the device can actually display. For example,
+     *  with a monochrome device, this method will return either
+     *  0xFFFFFF (white) or 0x000000 (black)
+     *  depending on the brightness of the specified color.
+     * 
+     * Parameters:color - the desired color (in 0x00RRGGBB
+     *  format, the high-order
+     *  byte is ignored)
+     * Returns:the corresponding color that will be displayed on the device's
+     *  screen (in 0x00RRGGBB format)Since:
+     *   MIDP 2.0
+     */
+    public int getDisplayColor(int color);
 
 }

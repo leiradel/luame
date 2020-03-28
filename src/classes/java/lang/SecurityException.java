@@ -10,4 +10,16 @@ public class SecurityException extends RuntimeException {
 
     private native void construct();
 
+    /**
+     * Constructs a SecurityException with the specified
+     *  detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public SecurityException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

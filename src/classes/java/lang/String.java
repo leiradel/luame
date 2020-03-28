@@ -1,19 +1,15 @@
 package java.lang;
 
 public class String {
-    private byte[] bytes;
-    private char[] chars;
-    private int length;
-
     /**
      * Initializes a newly created String object so that it
      *  represents an empty character sequence.
      */
     public String() {
-        bytes = null;
-        chars = null;
-        length = 0;
+        construct();
     }
+
+    private native void construct();
 
     /**
      * Initializes a newly created String object so that it
@@ -23,8 +19,10 @@ public class String {
      * Parameters:value - a String.
      */
     public String(String value) {
-        this(value.toCharArray());
+        construct(value);
     }
+
+    private native void construct(String value);
 
     /**
      * Allocates a new String so that it represents the
@@ -38,8 +36,10 @@ public class String {
      * NullPointerException - if value is null.
      */
     public String(char[] value) {
-        construct(value, 0, value.length);
+        construct(value);
     }
+
+    private native void construct(char[] value);
 
     /**
      * Allocates a new String that contains characters from
@@ -93,8 +93,10 @@ public class String {
      *   JDK1.1
      */
     public String(byte[] bytes, String enc) throws UnsupportedEncodingException {
-        construct(bytes, 0, bytes.length, enc);
+        construct(bytes, enc);
     }
+
+    private native void construct(byte[] bytes, String enc);
 
     /**
      * Construct a new String by converting the specified
@@ -121,8 +123,27 @@ public class String {
      *   JDK1.1
      */
     public String(byte[] bytes) {
-        construct(bytes, 0, bytes.length);
+        construct(bytes);
     }
+
+    private native void construct(byte[] bytes);
+
+    /**
+     * Allocates a new string that contains the sequence of characters
+     *  currently contained in the string buffer argument. The contents of
+     *  the string buffer are copied; subsequent modification of the string
+     *  buffer does not affect the newly created string.
+     * 
+     * Parameters:buffer - a StringBuffer.
+     * Throws:
+     * NullPointerException - If buffer is
+     *  null.
+     */
+    public String(StringBuffer buffer) {
+        construct(buffer);
+    }
+
+    private native void construct(StringBuffer buffer);
 
     /**
      * Returns the length of this string.
@@ -132,9 +153,7 @@ public class String {
      * Returns:the length of the sequence of characters represented by this
      *           object.
      */
-    public int length() {
-        return length;
-    }
+    public int length();
 
     /**
      * Returns the character at the specified index. An index ranges
@@ -150,9 +169,7 @@ public class String {
      *              argument is negative or not less than the length of this
      *              string.
      */
-    public char charAt(int index) {
-        return chars[index];
-    }
+    public char charAt(int index);
 
     /**
      * Copies characters from this string into the destination character
@@ -182,9 +199,7 @@ public class String {
      *                 dst.length
      * NullPointerException - if dst is null
      */
-    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        System.arraycopy(chars, srcBegin, dst, dstBegin, srcEnd - srcBegin);
-    }
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin);
 
     /**
      * Convert this String into bytes according to the specified
@@ -196,7 +211,7 @@ public class String {
      * UnsupportedEncodingException - If the named encoding is not supportedSince:
      *   JDK1.1
      */
-    public native byte[] getBytes(String enc) throws UnsupportedEncodingException;
+    public byte[] getBytes(String enc) throws UnsupportedEncodingException;
 
     /**
      * Convert this String into bytes according to the platform's
@@ -205,9 +220,7 @@ public class String {
      * Returns:the resultant byte array.Since:
      *   JDK1.1
      */
-    public byte[] getBytes() {
-        return bytes;
-    }
+    public byte[] getBytes();
 
     /**
      * Compares this string to the specified object.
@@ -223,9 +236,7 @@ public class String {
      *           false otherwise.See Also:compareTo(java.lang.String),
      * equalsIgnoreCase(java.lang.String)
      */
-    public boolean equals(Object anObject) {
-        return compareTo((String)anObject) == 0;
-    }
+    public boolean equals(Object anObject);
 
     /**
      * Compares this String to another String,
@@ -250,7 +261,7 @@ public class String {
      * Character.toLowerCase(char),
      * Character.toUpperCase(char)
      */
-    public native boolean equalsIgnoreCase(String anotherString);
+    public boolean equalsIgnoreCase(String anotherString);
 
     /**
      * Compares two strings lexicographically.
@@ -294,7 +305,7 @@ public class String {
      * NullPointerException - if anotherString
      *           is null.
      */
-    public native int compareTo(String anotherString);
+    public int compareTo(String anotherString);
 
     /**
      * Tests if two string regions are equal.
@@ -340,7 +351,7 @@ public class String {
      *           or case insensitive depends on the ignoreCase
      *           argument.
      */
-    public native boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len);
+    public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len);
 
     /**
      * Tests if this string starts with the specified prefix beginning
@@ -361,7 +372,7 @@ public class String {
      * NullPointerException - if prefix is
      *           null.
      */
-    public native boolean startsWith(String prefix, int toffset);
+    public boolean startsWith(String prefix, int toffset);
 
     /**
      * Tests if this string starts with the specified prefix.
@@ -379,7 +390,7 @@ public class String {
      *           null.Since:
      *   JDK1.0
      */
-    public native boolean startsWith(String prefix);
+    public boolean startsWith(String prefix);
 
     /**
      * Tests if this string ends with the specified suffix.
@@ -395,7 +406,7 @@ public class String {
      * NullPointerException - if suffix is
      *           null.
      */
-    public native boolean endsWith(String suffix);
+    public boolean endsWith(String suffix);
 
     /**
      * Returns a hashcode for this string. The hashcode for a
@@ -413,7 +424,7 @@ public class String {
      * Returns:a hash code value for this object.See Also:Object.equals(java.lang.Object),
      * Hashtable
      */
-    public native int hashCode();
+    public int hashCode();
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -432,7 +443,7 @@ public class String {
      *           character sequence represented by this object, or
      *           -1 if the character does not occur.
      */
-    public native int indexOf(int ch);
+    public int indexOf(int ch);
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -461,7 +472,7 @@ public class String {
      *           than or equal to fromIndex, or -1
      *           if the character does not occur.
      */
-    public native int indexOf(int ch, int fromIndex);
+    public int indexOf(int ch, int fromIndex);
 
     /**
      * Returns the index within this string of the last occurrence of the
@@ -478,7 +489,7 @@ public class String {
      *           character sequence represented by this object, or
      *           -1 if the character does not occur.
      */
-    public native int lastIndexOf(int ch);
+    public int lastIndexOf(int ch);
 
     /**
      * Returns the index within this string of the last occurrence of the
@@ -501,7 +512,7 @@ public class String {
      *           than or equal to fromIndex, or -1
      *           if the character does not occur before that point.
      */
-    public native int lastIndexOf(int ch, int fromIndex);
+    public int lastIndexOf(int ch, int fromIndex);
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -521,7 +532,7 @@ public class String {
      * NullPointerException - if str is
      *           null.
      */
-    public native int indexOf(String str);
+    public int indexOf(String str);
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -549,7 +560,7 @@ public class String {
      * NullPointerException - if str is
      *           null
      */
-    public native int indexOf(String str, int fromIndex);
+    public int indexOf(String str, int fromIndex);
 
     /**
      * Returns a new string that is a substring of this string. The
@@ -568,7 +579,7 @@ public class String {
      *              beginIndex is negative or larger than the
      *              length of this String object.
      */
-    public native String substring(int beginIndex);
+    public String substring(int beginIndex);
 
     /**
      * Returns a new string that is a substring of this string. The
@@ -591,7 +602,7 @@ public class String {
      *              beginIndex is larger than
      *              endIndex.
      */
-    public native String substring(int beginIndex, int endIndex);
+    public String substring(int beginIndex, int endIndex);
 
     /**
      * Concatenates the specified string to the end of this string.
@@ -615,7 +626,7 @@ public class String {
      * NullPointerException - if str is
      *           null.
      */
-    public native String concat(String str);
+    public String concat(String str);
 
     /**
      * Returns a new string resulting from replacing all occurrences of
@@ -644,7 +655,7 @@ public class String {
      * Returns:a string derived from this string by replacing every
      *           occurrence of oldChar with newChar.
      */
-    public native String replace(char oldChar, char newChar);
+    public String replace(char oldChar, char newChar);
 
     /**
      * Converts all of the characters in this String to lower case.
@@ -652,7 +663,7 @@ public class String {
      * Returns:the String, converted to lowercase.See Also:Character.toLowerCase(char),
      * toUpperCase()
      */
-    public native String toLowerCase();
+    public String toLowerCase();
 
     /**
      * Converts all of the characters in this String to upper case.
@@ -660,7 +671,7 @@ public class String {
      * Returns:the String, converted to uppercase.See Also:Character.toLowerCase(char),
      * toUpperCase()
      */
-    public native String toUpperCase();
+    public String toUpperCase();
 
     /**
      * Removes white space from both ends of this string.
@@ -690,7 +701,7 @@ public class String {
      * 
      * Returns:this string, with white space removed from the front and end.
      */
-    public native String trim();
+    public String trim();
 
     /**
      * This object (which is already a string!) is itself returned.
@@ -699,9 +710,7 @@ public class String {
      * 
      * Returns:the string itself.
      */
-    public native String toString() {
-        return this;
-    }
+    public String toString();
 
     /**
      * Converts this string to a new character array.
@@ -710,7 +719,7 @@ public class String {
      *           of this string and whose contents are initialized to contain
      *           the character sequence represented by this string.
      */
-    public native char[] toCharArray();
+    public char[] toCharArray();
 
     /**
      * Returns the string representation of the Object argument.
@@ -720,7 +729,7 @@ public class String {
      *           "null"; otherwise, the value of
      *           obj.toString() is returned.See Also:Object.toString()
      */
-    public static native String valueOf(Object obj);
+    public static String valueOf(Object obj);
 
     /**
      * Returns the string representation of the char array
@@ -732,7 +741,7 @@ public class String {
      * Returns:a newly allocated string representing the same sequence of
      *           characters contained in the character array argument.
      */
-    public static native String valueOf(char[] data);
+    public static String valueOf(char[] data);
 
     /**
      * Returns the string representation of a specific subarray of the
@@ -757,7 +766,7 @@ public class String {
      *           offset+count is larger than
      *           data.length.
      */
-    public static native String valueOf(char[] data, int offset, int count);
+    public static String valueOf(char[] data, int offset, int count);
 
     /**
      * Returns the string representation of the boolean argument.
@@ -767,7 +776,7 @@ public class String {
      *           "true" is returned; otherwise, a string equal to
      *           "false" is returned.
      */
-    public static native String valueOf(boolean b);
+    public static String valueOf(boolean b);
 
     /**
      * Returns the string representation of the char
@@ -777,7 +786,7 @@ public class String {
      * Returns:a newly allocated string of length 1 containing
      *           as its single character the argument c.
      */
-    public static native String valueOf(char c);
+    public static String valueOf(char c);
 
     /**
      * Returns the string representation of the int argument.
@@ -789,7 +798,7 @@ public class String {
      * Returns:a newly allocated string containing a string representation of
      *           the int argument.See Also:Integer.toString(int, int)
      */
-    public static native String valueOf(int i);
+    public static String valueOf(int i);
 
     /**
      * Returns the string representation of the long argument.
@@ -801,7 +810,7 @@ public class String {
      * Returns:a newly allocated string containing a string representation of
      *           the long argument.See Also:Long.toString(long)
      */
-    public static native String valueOf(long l);
+    public static String valueOf(long l);
 
     /**
      * Returns the string representation of the float argument.
@@ -815,7 +824,7 @@ public class String {
      *   CLDC 1.1
      * See Also:Float.toString(float)
      */
-    public static native String valueOf(float f);
+    public static String valueOf(float f);
 
     /**
      * Returns the string representation of the double argument.
@@ -829,5 +838,33 @@ public class String {
      *   CLDC 1.1
      * See Also:Double.toString(double)
      */
-    public static native String valueOf(double d);
+    public static String valueOf(double d);
+
+    /**
+     * Returns a canonical representation for the string object.
+     * 
+     *  A pool of strings, initially empty, is maintained privately by the
+     *  class String.
+     * 
+     *  When the intern method is invoked, if the pool already contains a
+     *  string equal to this String object as determined by
+     *  the equals(Object) method, then the string from the pool is
+     *  returned. Otherwise, this String object is added to the
+     *  pool and a reference to this String object is returned.
+     * 
+     *  It follows that for any two strings s and t,
+     *  s.intern()&nbsp;==&nbsp;t.intern() is true
+     *  if and only if s.equals(t) is true.
+     * 
+     *  All literal strings and string-valued constant expressions are
+     *  interned. String literals are defined in Section 3.10.5 of the
+     *  Java Language
+     *  Specification
+     * 
+     * Returns:a string that has the same contents as this string, but is
+     *           guaranteed to be from a pool of unique strings.Since:
+     *   CLDC 1.1
+     */
+    public String intern();
+
 }

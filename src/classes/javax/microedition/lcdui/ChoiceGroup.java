@@ -18,13 +18,68 @@ public class ChoiceGroup {
      * Choice.IMPLICIT,
      * Choice.POPUP
      */
-    public ChoiceGroup(String label,
-                   int choiceType) {
+    public ChoiceGroup(String label, int choiceType) {
         construct(label, choiceType);
     }
 
-    private native void construct(String label,
-                   int choiceType);
+    private native void construct(String label, int choiceType);
+
+    /**
+     * Creates a new ChoiceGroup, specifying its title,
+     *  the type of the
+     *  ChoiceGroup, and an array of Strings
+     *  and Images to be used as its
+     *  initial contents.
+     * 
+     *  The type must be one of EXCLUSIVE,
+     *  MULTIPLE, or POPUP.  The
+     *  IMPLICIT
+     *  type is not allowed for ChoiceGroup.
+     * 
+     *  The stringElements array must be non-null and
+     *  every array element
+     *  must also be non-null.  The length of the
+     *  stringElements array
+     *  determines the number of elements in the ChoiceGroup.  The
+     *  imageElements array
+     *  may be null to indicate that the
+     *  ChoiceGroup elements have no images.
+     *  If the
+     *  imageElements array is non-null, it must be the
+     *  same length as the
+     *  stringElements array.  Individual elements of the
+     *  imageElements array
+     *  may be null in order to indicate the absence of an
+     *  image for the
+     *  corresponding ChoiceGroup element.  Non-null elements
+     *  of the
+     *  imageElements array may refer to mutable or
+     *  immutable images.
+     * 
+     * Parameters:label - the item's label (see Item)choiceType - EXCLUSIVE, MULTIPLE,
+     *  or POPUPstringElements - set of strings specifying the string parts of the
+     *  ChoiceGroup elementsimageElements - set of images specifying the image parts of
+     *  the ChoiceGroup elements
+     * Throws:
+     * NullPointerException - if stringElements
+     *  is null
+     * NullPointerException - if the stringElements
+     *  array contains
+     *  any null elements
+     * IllegalArgumentException - if the imageElements
+     *  array is non-null
+     *  and has a different length from the stringElements array
+     * IllegalArgumentException - if choiceType is not one of
+     *  EXCLUSIVE, MULTIPLE, or POPUPSee Also:Choice.EXCLUSIVE,
+     * Choice.MULTIPLE,
+     * Choice.IMPLICIT,
+     * Choice.POPUP
+     */
+    public ChoiceGroup(String label, int choiceType, String[] stringElements, Image[] imageElements) {
+        construct(label, choiceType, stringElements, imageElements);
+    }
+
+    private native void construct(String label, int choiceType, String[] stringElements, Image[] imageElements);
 
     /**
      * Returns the number of elements in the ChoiceGroup.
@@ -73,8 +128,7 @@ public class ChoiceGroup {
      * NullPointerException - if stringPart is
      *  null
      */
-    public int append(String stringPart,
-                  Image imagePart);
+    public int append(String stringPart, Image imagePart);
 
     /**
      * Inserts an element into the ChoiceGroup just prior to
@@ -89,9 +143,7 @@ public class ChoiceGroup {
      * NullPointerException - if stringPart
      *  is null
      */
-    public void insert(int elementNum,
-                   String stringPart,
-                   Image imagePart);
+    public void insert(int elementNum, String stringPart, Image imagePart);
 
     /**
      * Deletes the element referenced by elementNum.
@@ -125,9 +177,7 @@ public class ChoiceGroup {
      * NullPointerException - if stringPart is
      *  null
      */
-    public void set(int elementNum,
-                String stringPart,
-                Image imagePart);
+    public void set(int elementNum, String stringPart, Image imagePart);
 
     /**
      * Gets a boolean value indicating whether this element is selected.
@@ -221,8 +271,7 @@ public class ChoiceGroup {
      * Throws:
      * IndexOutOfBoundsException - if elementNum is invalidSee Also:getSelectedIndex()
      */
-    public void setSelectedIndex(int elementNum,
-                             boolean selected);
+    public void setSelectedIndex(int elementNum, boolean selected);
 
     /**
      * Attempts to set the selected state of every element in the
@@ -316,7 +365,29 @@ public class ChoiceGroup {
      *   MIDP 2.0
      * See Also:getFont(int)
      */
-    public void setFont(int elementNum,
-                    Font font);
+    public void setFont(int elementNum, Font font);
+
+    /**
+     * Gets the application's preferred font for
+     *  rendering the specified element of this Choice. The
+     *  value returned is the font that had been set by the application,
+     *  even if that value had been disregarded by the implementation.
+     *  If no font had been set by the application, or if the application
+     *  explicitly set the font to null, the value is the default
+     *  font chosen by the implementation.
+     * 
+     *   The elementNum parameter must be within the range
+     *  [0..size()-1], inclusive.
+     * 
+     * Specified by:getFont in interface Choice
+     * 
+     * Parameters:elementNum - the index of the element, starting from zero
+     * Returns:the preferred font to use to render the element
+     * Throws:
+     * IndexOutOfBoundsException - if elementNum is invalidSince:
+     *   MIDP 2.0
+     * See Also:setFont(int elementNum, Font font)
+     */
+    public Font getFont(int elementNum);
 
 }

@@ -23,4 +23,16 @@ public class ArrayIndexOutOfBoundsException extends IndexOutOfBoundsException {
 
     private native void construct(int index);
 
+    /**
+     * Constructs an ArrayIndexOutOfBoundsException class
+     *  with the specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public ArrayIndexOutOfBoundsException(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

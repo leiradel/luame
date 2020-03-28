@@ -1,6 +1,12 @@
 package java.lang;
 
 public class Object {
+    public Object() {
+        construct();
+    }
+
+    private native void construct();
+
     /**
      * Returns the runtime class of an object. That Class
      *  object is the object that is locked by static synchronized
@@ -9,7 +15,7 @@ public class Object {
      * Returns:the object of type Class that represents the
      *           runtime class of the object.
      */
-    public final native Class getClass();
+    public final Class getClass();
 
     /**
      * Returns a hash code value for the object. This method is
@@ -44,9 +50,7 @@ public class Object {
      * Returns:a hash code value for this object.See Also:equals(java.lang.Object),
      * Hashtable
      */
-    public int hashCode() {
-        return System.identityHashCode(this);
-    }
+    public int hashCode();
 
     /**
      * Indicates whether some other object is "equal to" this one.
@@ -84,9 +88,7 @@ public class Object {
      *           argument; false otherwise.See Also:Boolean.hashCode(),
      * Hashtable
      */
-    public boolean equals(Object obj) {
-        return this == obj;
-    }
+    public boolean equals(Object obj);
 
     /**
      * Returns a string representation of the object. In general, the
@@ -107,7 +109,7 @@ public class Object {
      * 
      * Returns:a string representation of the object.
      */
-    public native String toString();
+    public String toString();
 
     /**
      * Wakes up a single thread that is waiting on this object's
@@ -140,7 +142,7 @@ public class Object {
      *                the owner of this object's monitor.See Also:notifyAll(),
      * wait()
      */
-    public native final void notify();
+    public final void notify();
 
     /**
      * Wakes up all threads that are waiting on this object's monitor. A
@@ -164,7 +166,7 @@ public class Object {
      *              not the owner of this object's monitor.See Also:notify(),
      * wait()
      */
-    public native final void notifyAll();
+    public final void notifyAll();
 
     /**
      * Causes current thread to wait until either another thread invokes the
@@ -230,7 +232,7 @@ public class Object {
      *              current thread is cleared when this exception is thrown.See Also:notify(),
      * notifyAll()
      */
-    public final native void wait(long timeout) throws InterruptedException;
+    public final void wait(long timeout) throws InterruptedException;
 
     /**
      * Causes current thread to wait until another thread invokes the
@@ -281,5 +283,35 @@ public class Object {
      *              the current thread.  The interrupted status of the
      *              current thread is cleared when this exception is thrown.
      */
-    public native final void wait(long timeout, int nanos) throws InterruptedException;
+    public final void wait(long timeout, int nanos) throws InterruptedException;
+
+    /**
+     * Causes current thread to wait until another thread invokes the
+     *  notify() method or the
+     *  notifyAll() method for this object.
+     *  In other word's this method behaves exactly as if it simply
+     *  performs the call wait(0).
+     * 
+     *  The current thread must own this object's monitor. The thread
+     *  releases ownership of this monitor and waits until another thread
+     *  notifies threads waiting on this object's monitor to wake up
+     *  either through a call to the notify method or the
+     *  notifyAll method. The thread then waits until it can
+     *  re-obtain ownership of the monitor and resumes execution.
+     * 
+     *  This method should only be called by a thread that is the owner
+     *  of this object's monitor. See the notify method for a
+     *  description of the ways in which a thread can become the owner of
+     *  a monitor.
+     * 
+     * Throws:
+     * IllegalMonitorStateException - if the current thread is not
+     *                the owner of the object's monitor.
+     * InterruptedException - if another thread has interrupted
+     *              the current thread.  The interrupted status of the
+     *              current thread is cleared when this exception is thrown.See Also:notify(),
+     * notifyAll()
+     */
+    public final void wait() throws InterruptedException;
+
 }

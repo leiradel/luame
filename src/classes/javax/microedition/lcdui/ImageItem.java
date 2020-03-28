@@ -69,17 +69,52 @@ public class ImageItem extends Item {
      * IllegalArgumentException - if the layout value is not
      *  a legal combination of directivesSee Also:ImageItem(String, Image, int, String, int)
      */
-    public ImageItem(String label,
-                 Image img,
-                 int layout,
-                 String altText) {
+    public ImageItem(String label, Image img, int layout, String altText) {
         construct(label, img, layout, altText);
     }
 
-    private native void construct(String label,
-                 Image img,
-                 int layout,
-                 String altText);
+    private native void construct(String label, Image img, int layout, String altText);
+
+    /**
+     * Creates a new ImageItem object with the given label, image,
+     *  layout directive, alternate text string, and appearance mode.
+     *  Either label or alternative text may be present or null.
+     * 
+     *  The appearanceMode parameter
+     *  (see Appearance Modes)
+     *  is a hint to the platform of the application's intended use
+     *  for this ImageItem. To provide hyperlink- or
+     *  button-like behavior,
+     *  the application should associate a default Command with this
+     *  ImageItem and add an
+     *  ItemCommandListener to this
+     *  ImageItem.
+     * 
+     *  Here is an example showing the use of an
+     *  ImageItem as a button:
+     * 
+     *      ImageItem imgItem =
+     *          new ImageItem("Default: ", img,
+     *                        Item.LAYOUT_CENTER, null,
+     *                        Item.BUTTON);
+     *      imgItem.setDefaultCommand(
+     *          new Command("Set", Command.ITEM, 1);
+     *      // icl is ItemCommandListener
+     *      imgItem.setItemCommandListener(icl);
+     * 
+     * Parameters:label - the label stringimage - the image, can be mutable or immutablelayout - a combination of layout directivesaltText - the text that may be used in place of the imageappearanceMode - the appearance mode of the ImageItem,
+     *  one of Item.PLAIN, Item.HYPERLINK, or Item.BUTTON
+     * Throws:
+     * IllegalArgumentException - if the layout value is not
+     *  a legal combination of directives
+     * IllegalArgumentException - if appearanceMode invalidSince:
+     *   MIDP 2.0
+     */
+    public ImageItem(String label, Image image, int layout, String altText, int appearanceMode) {
+        construct(label, image, layout, altText, appearanceMode);
+    }
+
+    private native void construct(String label, Image image, int layout, String altText, int appearanceMode);
 
     /**
      * Gets the image contained within the ImageItem, or
@@ -160,5 +195,15 @@ public class ImageItem extends Item {
      *  combination of layout directivesSee Also:getLayout()
      */
     public void setLayout(int layout);
+
+    /**
+     * Returns the appearance mode of the ImageItem.
+     *  See Appearance Modes.
+     * 
+     * Returns:the appearance mode value,
+     *  one of Item.PLAIN, Item.HYPERLINK, or Item.BUTTONSince:
+     *   MIDP 2.0
+     */
+    public int getAppearanceMode();
 
 }

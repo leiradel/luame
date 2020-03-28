@@ -134,11 +134,7 @@ public class System {
      * NullPointerException - if either src or
      *                dst is null.
      */
-    public static void arraycopy(Object src,
-                             int src_position,
-                             Object dst,
-                             int dst_position,
-                             int length);
+    public static void arraycopy(Object src, int src_position, Object dst, int dst_position, int length);
 
     /**
      * Returns the same hashcode for the given object as
@@ -182,5 +178,24 @@ public class System {
      * Parameters:status - exit status.See Also:Runtime.exit(int)
      */
     public static void exit(int status);
+
+    /**
+     * Runs the garbage collector.
+     * 
+     *  Calling the gc method suggests that the Java Virtual
+     *  Machine expend effort toward recycling unused objects in order to
+     *  make the memory they currently occupy available for quick reuse.
+     *  When control returns from the method call, the Java Virtual
+     *  Machine has made a best effort to reclaim space from all discarded
+     *  objects.
+     * 
+     *  The call System.gc() is effectively equivalent to the
+     *  call:
+     * 
+     *  Runtime.getRuntime().gc()
+     * 
+     * See Also:Runtime.gc()
+     */
+    public static void gc();
 
 }

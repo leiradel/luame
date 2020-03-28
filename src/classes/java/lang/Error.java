@@ -10,4 +10,15 @@ public class Error extends Throwable {
 
     private native void construct();
 
+    /**
+     * Constructs an Error with the specified detail message.
+     * 
+     * Parameters:s - the detail message.
+     */
+    public Error(String s) {
+        construct(s);
+    }
+
+    private native void construct(String s);
+
 }

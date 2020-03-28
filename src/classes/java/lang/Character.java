@@ -40,6 +40,18 @@ public class Character {
     public static final char MAX_VALUE = ;
 
     /**
+     * Constructs a Character object and initializes it so
+     *  that it represents the primitive value argument.
+     * 
+     * Parameters:value - value for the new Character object.
+     */
+    public Character(char value) {
+        construct(value);
+    }
+
+    private native void construct(char value);
+
+    /**
      * Returns the value of this Character object.
      * 
      * Returns:the primitive char value represented by
@@ -176,5 +188,17 @@ public class Character {
      * toLowerCase(char)
      */
     public static char toUpperCase(char ch);
+
+    /**
+     * Returns the numeric value of the character ch in the
+     *  specified radix.
+     * 
+     * Parameters:ch - the character to be converted.radix - the radix.
+     * Returns:the numeric value represented by the character in the
+     *           specified radix.Since:
+     *   JDK1.0
+     * See Also:isDigit(char)
+     */
+    public static int digit(char ch, int radix);
 
 }

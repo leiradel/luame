@@ -7,6 +7,19 @@ public class DataInputStream {
     protected InputStream in = ;
 
     /**
+     * Creates a DataInputStream
+     *  and saves its  argument, the input stream
+     *  in, for later use.
+     * 
+     * Parameters:in - the input stream.
+     */
+    public DataInputStream(InputStream in) {
+        construct(in);
+    }
+
+    private native void construct(InputStream in);
+
+    /**
      * Reads the next byte of data from this input stream. The value
      *  byte is returned as an int in the range
      *  0 to 255. If no byte is available
@@ -25,8 +38,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public int read()
-         throws IOException;
+    public int read() throws IOException;
 
     /**
      * See the general contract of the read
@@ -44,8 +56,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.See Also:InputStream.read(byte[], int, int)
      */
-    public final int read(byte[] b)
-               throws IOException;
+    public final int read(byte[] b) throws IOException;
 
     /**
      * Reads up to len bytes of data from this input stream
@@ -64,10 +75,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.See Also:InputStream.read()
      */
-    public final int read(byte[] b,
-                      int off,
-                      int len)
-               throws IOException;
+    public final int read(byte[] b, int off, int len) throws IOException;
 
     /**
      * See the general contract of the readFully
@@ -84,8 +92,7 @@ public class DataInputStream {
      *                reading all the bytes.
      * IOException - if an I/O error occurs.
      */
-    public final void readFully(byte[] b)
-                     throws IOException;
+    public final void readFully(byte[] b) throws IOException;
 
     /**
      * See the general contract of the readFully
@@ -102,10 +109,7 @@ public class DataInputStream {
      *                reading all the bytes.
      * IOException - if an I/O error occurs.
      */
-    public final void readFully(byte[] b,
-                            int off,
-                            int len)
-                     throws IOException;
+    public final void readFully(byte[] b, int off, int len) throws IOException;
 
     /**
      * See the general contract of the skipBytes
@@ -121,8 +125,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public final int skipBytes(int n)
-                    throws IOException;
+    public final int skipBytes(int n) throws IOException;
 
     /**
      * See the general contract of the readBoolean
@@ -138,8 +141,7 @@ public class DataInputStream {
      * EOFException - if this input stream has reached the end.
      * IOException - if an I/O error occurs.
      */
-    public final boolean readBoolean()
-                          throws IOException;
+    public final boolean readBoolean() throws IOException;
 
     /**
      * See the general contract of the readByte
@@ -156,8 +158,7 @@ public class DataInputStream {
      * EOFException - if this input stream has reached the end.
      * IOException - if an I/O error occurs.
      */
-    public final byte readByte()
-                    throws IOException;
+    public final byte readByte() throws IOException;
 
     /**
      * See the general contract of the readUnsignedByte
@@ -174,8 +175,7 @@ public class DataInputStream {
      * EOFException - if this input stream has reached the end.
      * IOException - if an I/O error occurs.
      */
-    public final int readUnsignedByte()
-                           throws IOException;
+    public final int readUnsignedByte() throws IOException;
 
     /**
      * See the general contract of the readShort
@@ -193,8 +193,7 @@ public class DataInputStream {
      *                reading two bytes.
      * IOException - if an I/O error occurs.
      */
-    public final short readShort()
-                      throws IOException;
+    public final short readShort() throws IOException;
 
     /**
      * See the general contract of the readUnsignedShort
@@ -212,8 +211,7 @@ public class DataInputStream {
      *                reading two bytes.
      * IOException - if an I/O error occurs.
      */
-    public final int readUnsignedShort()
-                            throws IOException;
+    public final int readUnsignedShort() throws IOException;
 
     /**
      * See the general contract of the readChar
@@ -231,8 +229,7 @@ public class DataInputStream {
      *                reading two bytes.
      * IOException - if an I/O error occurs.
      */
-    public final char readChar()
-                    throws IOException;
+    public final char readChar() throws IOException;
 
     /**
      * See the general contract of the readInt
@@ -250,8 +247,7 @@ public class DataInputStream {
      *                reading four bytes.
      * IOException - if an I/O error occurs.
      */
-    public final int readInt()
-                  throws IOException;
+    public final int readInt() throws IOException;
 
     /**
      * See the general contract of the readLong
@@ -269,8 +265,7 @@ public class DataInputStream {
      *                reading eight bytes.
      * IOException - if an I/O error occurs.
      */
-    public final long readLong()
-                    throws IOException;
+    public final long readLong() throws IOException;
 
     /**
      * See the general contract of the readFloat
@@ -291,8 +286,7 @@ public class DataInputStream {
      * See Also:readInt(),
      * Float.intBitsToFloat(int)
      */
-    public final float readFloat()
-                      throws IOException;
+    public final float readFloat() throws IOException;
 
     /**
      * See the general contract of the readDouble
@@ -313,8 +307,7 @@ public class DataInputStream {
      * See Also:readLong(),
      * Double.longBitsToDouble(long)
      */
-    public final double readDouble()
-                        throws IOException;
+    public final double readDouble() throws IOException;
 
     /**
      * See the general contract of the readUTF
@@ -331,8 +324,7 @@ public class DataInputStream {
      *                reading all the bytes.
      * IOException - if an I/O error occurs.See Also:readUTF(java.io.DataInput)
      */
-    public final String readUTF()
-                     throws IOException;
+    public final String readUTF() throws IOException;
 
     /**
      * Reads from the
@@ -353,8 +345,7 @@ public class DataInputStream {
      * UTFDataFormatException - if the bytes do not represent a
      *              valid UTF-8 encoding of a Unicode string.See Also:readUnsignedShort()
      */
-    public static final String readUTF(DataInput in)
-                            throws IOException;
+    public static final String readUTF(DataInput in) throws IOException;
 
     /**
      * Skips over and discards n bytes of data from the
@@ -373,8 +364,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public long skip(long n)
-          throws IOException;
+    public long skip(long n) throws IOException;
 
     /**
      * Returns the number of bytes that can be read from this input
@@ -390,8 +380,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public int available()
-              throws IOException;
+    public int available() throws IOException;
 
     /**
      * Closes this input stream and releases any system resources
@@ -404,8 +393,7 @@ public class DataInputStream {
      * Throws:
      * IOException - if an I/O error occurs.
      */
-    public void close()
-           throws IOException;
+    public void close() throws IOException;
 
     /**
      * Marks the current position in this input stream. A subsequent
@@ -448,7 +436,21 @@ public class DataInputStream {
      *              mark has been invalidated.See Also:InputStream.mark(int),
      * IOException
      */
-    public void reset()
-           throws IOException;
+    public void reset() throws IOException;
+
+    /**
+     * Tests if this input stream supports the mark
+     *  and reset methods.
+     *  This method
+     *  simply performs in.markSupported().
+     * 
+     * Overrides:markSupported in class InputStream
+     * 
+     * Returns:true if this stream type supports the
+     *           mark and reset method;
+     *           false otherwise.See Also:InputStream.mark(int),
+     * InputStream.reset()
+     */
+    public boolean markSupported();
 
 }

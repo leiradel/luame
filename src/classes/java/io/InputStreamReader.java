@@ -13,6 +13,19 @@ public class InputStreamReader extends Reader {
     private native void construct(InputStream is);
 
     /**
+     * Create an InputStreamReader that uses the named character encoding.
+     * 
+     * Parameters:is - An InputStreamenc - The name of a supported character encoding
+     * Throws:
+     * UnsupportedEncodingException - If the named encoding is not supported
+     */
+    public InputStreamReader(InputStream is, String enc) throws UnsupportedEncodingException {
+        construct(is, enc);
+    }
+
+    private native void construct(InputStream is, String enc);
+
+    /**
      * Read a single character.
      * 
      * Overrides:read in class Reader
@@ -22,8 +35,7 @@ public class InputStreamReader extends Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public int read()
-         throws IOException;
+    public int read() throws IOException;
 
     /**
      * Read characters into a portion of an array.
@@ -36,10 +48,7 @@ public class InputStreamReader extends Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public int read(char[] cbuf,
-                int off,
-                int len)
-         throws IOException;
+    public int read(char[] cbuf, int off, int len) throws IOException;
 
     /**
      * Skip characters.
@@ -52,8 +61,7 @@ public class InputStreamReader extends Reader {
      * IllegalArgumentException - If n is negative.
      * IOException - If an I/O error occurs
      */
-    public long skip(long n)
-          throws IOException;
+    public long skip(long n) throws IOException;
 
     /**
      * Tell whether this stream is ready to be read.
@@ -66,8 +74,7 @@ public class InputStreamReader extends Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public boolean ready()
-              throws IOException;
+    public boolean ready() throws IOException;
 
     /**
      * Tell whether this stream supports the mark() operation.
@@ -91,8 +98,7 @@ public class InputStreamReader extends Reader {
      * IOException - If the stream does not support mark(),
      *                           or if some other I/O error occurs
      */
-    public void mark(int readAheadLimit)
-          throws IOException;
+    public void mark(int readAheadLimit) throws IOException;
 
     /**
      * Reset the stream.
@@ -102,7 +108,17 @@ public class InputStreamReader extends Reader {
      * Throws:
      * IOException - If an I/O error occurs
      */
-    public void reset()
-           throws IOException;
+    public void reset() throws IOException;
+
+    /**
+     * Close the stream.  Closing a previously closed stream
+     *  has no effect.
+     * 
+     * Specified by:close in class Reader
+     * 
+     * Throws:
+     * IOException - If an I/O error occurs
+     */
+    public void close() throws IOException;
 
 }
